@@ -1,0 +1,20 @@
+version: "2"
+services:
+  leela_zero_server:
+    build: .
+    image: leela_zero_server
+    ports:
+      - "10001:8080"
+    depends_on:
+      - mongo
+    volumes:
+      - sai-network:/usr/src/app/network
+  mongo:
+    image: mongo
+    volumes:
+      - sai-db:/data/db
+      - sai-configdb:/data/configdb
+volumes:
+  sai-network:
+  sai-db:
+  sai-configdb:
