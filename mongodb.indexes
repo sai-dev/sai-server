@@ -7,7 +7,7 @@ db.games.createIndex({"networkhash":1}, {"name":"networkhash_1"});
 db.games.createIndex({"sgfhash":1}, {"unique":true,"name":"sgfhash_1"});
 
 // match-games
-db.match-games.createIndex({"_id":1}, {"name":"_id_"});
+//db.match-games.createIndex({"_id":1}, {"name":"_id_"});
 
 // match_games
 db.match_games.createIndex({"_id":1}, {"name":"_id_"});
