@@ -349,7 +349,7 @@ setInterval( () => {
     }
 }, 1000 * 60 * 1);
 
-MongoClient.connect('mongodb://localhost/test', (err, database) => {
+MongoClient.connect('mongodb://mongo/test', (err, database) => {
     if (err) return console.log(err);
 
     db = database;
