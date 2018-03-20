@@ -24,6 +24,11 @@ const mongoMorgan = require("mongo-morgan");
 const Raven = require("raven");
 const config = require("./config");
 
+const default_visits = 1600;
+const default_randomcnt = 30;
+const default_resignation_percent = 5;
+const default_no_resignation_probability = 0.1;
+
 const MONGODB_URL = "mongodb://localhost/test";
 
 if (config.RAVEN_DSN) {
@@ -445,11 +450,11 @@ app.post("/request-match", (req, res) => {
 
     if (!req.body.playouts && !req.body.visits)
         //req.body.playouts = 1600;
-        req.body.visits = 1600;
+        req.body.visits = default_visits;
         //return res.status(400).send('No playouts specified.');
 
     if (!req.body.resignation_percent)
-        req.body.resignation_percent = 5;
+        req.body.resignation_percent = default_resignation_percent;
         //return res.status(400).send('No resignation_percent specified.');
 
     if (!req.body.noise)
@@ -1319,8 +1324,11 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "<br>A new front page is being tested at <a href=\"http://zero.sjeng.org/home\">http://zero.sjeng.org/home</a>. Please review and provide feedback <a href=\"https://github.com/gcp/leela-zero-server/issues/170\">here</a>.<br>";
         page += "<br>Autogtp will automatically download better networks once found.<br>";
         page += "Not each trained network will be a strength improvement over the prior one. Patience please. :)<br>";
-        page += "Match games are played at full strength (only 1600 visits).<br>";
-        page += "Self-play games are played with some randomness and noise for all moves.<br>";
+        page += "Match games are played at full strength (only " + default_visits + " visits).<br>";
+        if (default_randomcnt < 999)
+            page += "Self-play games are played with some randomness in first " + default_randomcnt + " moves, and noise all game long.<br>";
+        else
+            page += "Self-play games are played with some randomness and noise for all moves.<br>";
         page += "Training data from self-play games are full strength even if plays appear weak.<br>";
         page += "<br>";
         page += "2018-10-31 <a href=\"https://github.com/gcp/leela-zero/releases\">Leela Zero 0.16 + AutoGTP v17</a>.<br>";
@@ -1465,9 +1473,9 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
         const task = { cmd: "selfplay", hash: "", required_client_version, minimum_autogtp_version: required_client_version, random_seed, minimum_leelaz_version: required_leelaz_version };
 
         //var options = {"playouts": "1600", "resignation_percent": "10", "noise": "true", "randomcnt": "30"};
-        const options = { playouts: "0", visits: "1601", resignation_percent: "5", noise: "true", randomcnt: "30" };
+        const options = { playouts: "0", visits: String(default_visits+1), resignation_percent: String(default_resignation_percent), noise: "true", randomcnt: String(default_randomcnt)};
 
-        if (Math.random() < 0.1) options.resignation_percent = "0";
+        if (Math.random() < default_no_resignation_probability) options.resignation_percent = "0";
 
         task.hash = best_network_hash;
 
