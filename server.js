@@ -16,6 +16,10 @@ const app = express();
 
 var auth_key = String(fs.readFileSync(__dirname + "/auth_key")).trim();
 
+var default_visits = 3200;
+var default_randomcnt = 30;
+var mongodb_url = 'mongodb://localhost/test';
+
 var cacheIP24hr = new Cacheman('IP24hr');
 var cacheIP1hr = new Cacheman('IP1hr');
 var cachematches = new Cacheman('matches');
@@ -349,7 +353,7 @@ setInterval( () => {
     }
 }, 1000 * 60 * 1);
 
-MongoClient.connect('mongodb://mongo/test', (err, database) => {
+MongoClient.connect(mongodb_url, (err, database) => {
     if (err) return console.log(err);
 
     db = database;
@@ -452,7 +456,7 @@ app.post('/request-match', (req, res) => {
 
     if (!req.body.playouts && !req.body.visits)
         //req.body.playouts = 1600;
-        req.body.visits = 3200;
+        req.body.visits = default_visits;
         //return res.status(400).send('No playouts specified.');
 
     if (!req.body.resignation_percent)
@@ -1165,8 +1169,8 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
         page += "Network 1e2b85cf is best_v1 tested as a reference point. It isn't a normal LZ network. Not a bug.<br>\n";
         page += "<br>Autogtp will automatically download better networks once found.<br>";
         page += "Not each trained network will be a strength improvement over the prior one. Patience please. :)<br>";
-        page += "Match games are played at full strength (only 3200 visits).<br>";
-        page += "Training games are played with some randomness in first 30 moves, and noise all game long.<br>";
+        page += "Match games are played at full strength (only " + default_visits + " visits).<br>";
+        page += "Training games are played with some randomness in first " + default_randomcnt + " moves, and noise all game long.<br>";
         page += "<br>";
         page += "2018-03-24 <a href=\"https://github.com/gcp/leela-zero/releases\">Leela Zero 0.13 + AutoGTP v15</a>.</b><br>";
         page += "2018-03-05 We moved to 10 blocks x 128 filters.<br>";
@@ -1294,7 +1298,7 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
         // TODO In time we'll change this to a visits default instead of options default, for new --visits command
         //
         //var options = {"playouts": "1600", "resignation_percent": "10", "noise": "true", "randomcnt": "30"};
-        var options = {"playouts": "0", "visits": "3200", "resignation_percent": "5", "noise": "true", "randomcnt": "30"};
+        var options = {"playouts": "0", "visits": String(default_visits), "resignation_percent": "5", "noise": "true", "randomcnt": String(default_randomcnt)};
 
         if (Math.random() < .2) options.resignation_percent = "0";
 
