@@ -501,7 +501,7 @@ app.post('/submit-network', asyncMiddleware((req, res, next) => {
         });
 
     }).on('finish', async () => {
-        
+
         await file_promise;
 
         if (!req.body.key || req.body.key != auth_key) {
@@ -619,7 +619,7 @@ app.post('/submit-match', asyncMiddleware(async (req, res, next) => {
     if (!match)
         return logAndFail('Match not found.');
 
-    // calculate sgfhash 
+    // calculate sgfhash
     try {
         const sgfbuffer = await new Promise((resolve, reject) => zlib.unzip(req.files.sgf.data, (err, res) => {
             if (err) {
@@ -657,7 +657,7 @@ app.post('/submit-match', asyncMiddleware(async (req, res, next) => {
         return logAndFail('Error with sgf.');
     }
 
-    // prepare $inc 
+    // prepare $inc
     var $inc = { game_count: 1 };
     if (match.network1 == req.body.winnerhash)
         $inc.network1_wins = 1;
@@ -668,7 +668,7 @@ app.post('/submit-match', asyncMiddleware(async (req, res, next) => {
     match = (await db.collection("matches").findOneAndUpdate(
         { _id: match._id },
         { $inc: $inc },
-        { returnOriginal: false }  // return modified document 
+        { returnOriginal: false }  // return modified document
     )).value;
 
     // get latest SPRT result
@@ -691,7 +691,7 @@ app.post('/submit-match', asyncMiddleware(async (req, res, next) => {
                 m.requests.splice(index, 1);
             }
 
-            // update stats 
+            // update stats
             m.game_count++;
             if (m.network1 == req.body.winnerhash) {
                 m.network1_wins++;
@@ -862,7 +862,7 @@ app.get('/network-profiles', asyncMiddleware(async (req, res, next) => {
         })
         .sort({ _id: -1 })
         .toArray();
-    
+
     var pug_data = { networks };
 
     res.render('networks/index', pug_data);
@@ -897,7 +897,7 @@ app.get('/network-profiles/:hash(\\w+)', asyncMiddleware(async (req, res, next) 
         var retricon = require('retricon-without-canvas');
 
         await new Promise((resolve, reject) => {
-            // GitHub style 
+            // GitHub style
             retricon(network.hash, { pixelSize: 70, imagePadding: 35, bgColor: '#F0F0F0' })
                 .pngStream()
                 .pipe(fs.createWriteStream(avatar_path))
@@ -1202,9 +1202,6 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
         page += "</style>\n";
         page += "</head><body>\n";
 
-        page += "Leela Zero is available from: <a href=\"https://github.com/gcp/leela-zero\">Github</a>.<br>";
-        page += "Check out the <a href=\"https://github.com/gcp/leela-zero/blob/master/FAQ.md\">FAQ</a> and ";
-        page += "<a href=\"https://github.com/gcp/leela-zero/blob/master/README.md\">README</a>.<br>";
         page += "<br>Autogtp will automatically download better networks once found.<br>";
         page += "Not each trained network will be a strength improvement over the prior one. Patience please. :)<br>";
         page += "Match games are played at full strength (only " + default_visits + " visits).<br>";
@@ -1214,7 +1211,7 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
             page += "Self-play games are played with some randomness and noise for all moves.<br>";
         page += "Training data from self-play games are full strength even if plays appear weak.<br>";
         page += "<br>";
-        page += "2018-05-04 <a href=\"https://github.com/gcp/leela-zero/releases\">Leela Zero 0.14 + AutoGTP v16</a>. <b>Update required soon.</b><br>";
+        page += "2018-05-04 Leela Zero 0.14 + AutoGTP v16.<br>";
         page += "<br>";
 
         responses.map( response => page += response );
@@ -1233,9 +1230,6 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
             page += "<br>";
         }
 
-        page += "<br><br>";
-        page += "<a href=\"https://sjeng.org/zero/\">Raw SGF files</a>.<br>";
-        page += "<a href=\"https://docs.google.com/spreadsheets/d/e/2PACX-1vTsHu7T9vbfLsYOIANnUX9rHAYu7lQ4AlpVIvCfn60G7BxNZ0JH4ulfbADEedPVgwHxaH5MczdH853l/pubchart?oid=286613333&format=interactive\">Original strength graph</a>. (Mostly obsolete.)<br>";
         page += "<br>";
         page += `<h4>Recent Strength Graph (<a href="/static/elo.html">Full view</a>.)</h4>`;
         page += `<iframe width="950" height="655" seamless frameborder="0" scrolling="no" src="/static/elo.html?0#recent=2500000"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector("iframe"))</script>`;
@@ -1370,7 +1364,7 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
         // For now, have autogtp 16 or newer play half of self-play with
         // Facebook's ELF Open Go network, which uses network version 2.
         if (req.params.version >= 16 && Math.random() < .25) {
-            task.hash = ELF_NETWORK;    
+            task.hash = ELF_NETWORK;
             options.resignation_percent = "5";
         }
 
@@ -1521,7 +1515,7 @@ app.get('/data/elograph.json',  asyncMiddleware( async (req, res, next) => {
                 bestRatings.set(item.hash, 0);
 
             return {
-                "hash": item.hash, 
+                "hash": item.hash,
                 "game_count": item.game_count,
                 "net": (item.training_count === 0 || item.training_count) ? item.training_count : totalgames.count, // mycount
                 best
