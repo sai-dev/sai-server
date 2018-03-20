@@ -1301,8 +1301,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         const styles = match_and_styles[0];
         const match_table = match_and_styles[1];
 
-        let page = "<html><head>\n<title>Leela Zero</title>\n";
-        page += "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Leela Zero Best Networks\" href=\"http://zero.sjeng.org/rss\" />";
+        let page = "<html><head>\n<title>Leela Zero / SAI</title>\n";
         page += "<script type=\"text/javascript\" src=\"/static/timeago.js\"></script>\n";
         page += "<style>";
         page += "table.networks-table { float: left; margin-right: 40px; margin-bottom: 20px; }\n";
@@ -1323,10 +1322,6 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "</style>\n";
         page += "</head><body>\n";
 
-        page += "Leela Zero is available from: <a href=\"https://github.com/gcp/leela-zero\">Github</a>.<br>";
-        page += "Check out the <a href=\"https://github.com/gcp/leela-zero/blob/master/FAQ.md\">FAQ</a> and ";
-        page += "<a href=\"https://github.com/gcp/leela-zero/blob/master/README.md\">README</a>.<br>";
-        page += "<br>A new front page is being tested at <a href=\"http://zero.sjeng.org/home\">http://zero.sjeng.org/home</a>. Please review and provide feedback <a href=\"https://github.com/gcp/leela-zero-server/issues/170\">here</a>.<br>";
         page += "<br>Autogtp will automatically download better networks once found.<br>";
         page += "Not each trained network will be a strength improvement over the prior one. Patience please. :)<br>";
         page += "Match games are played at full strength (only " + default_visits + " visits).<br>";
@@ -1336,9 +1331,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
             page += "Self-play games are played with some randomness and noise for all moves.<br>";
         page += "Training data from self-play games are full strength even if plays appear weak.<br>";
         page += "<br>";
-        page += "2019-04-04 <a href=\"https://github.com/gcp/leela-zero/releases\">Leela Zero 0.17 + AutoGTP v18</a>.<br>";
-        page += "2018-10-31 <a href=\"https://github.com/gcp/leela-zero/releases\">Leela Zero 0.16 + AutoGTP v17</a>.<br>";
-        page += "2018-07-28 Force promoted V20-2 as new 20 block starting point network. Selfplay and matches now use 1600 visits.<br>";
+        page += "SAI is derived from Leela Zero 0.16 + AutoGTP v17.<br>";
         page += "<br>";
 
         responses.map(response => page += response);
@@ -1352,9 +1345,6 @@ app.get("/", asyncMiddleware(async(req, res) => {
             }
         });
 
-        page += "<br><br>";
-        page += "<a href=\"https://sjeng.org/zero/\">Raw SGF files</a>.<br>";
-        page += "<a href=\"https://docs.google.com/spreadsheets/d/e/2PACX-1vTsHu7T9vbfLsYOIANnUX9rHAYu7lQ4AlpVIvCfn60G7BxNZ0JH4ulfbADEedPVgwHxaH5MczdH853l/pubchart?oid=286613333&format=interactive\">Original strength graph</a>. (Mostly obsolete.)<br>";
         page += "<br>";
         page += "<h4>Recent Strength Graph (<a href=\"/static/elo.html\">Full view</a>.)</h4>";
         page += "<iframe width=\"950\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/elo.html?0#recent=2500000\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
