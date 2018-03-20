@@ -548,14 +548,14 @@ app.post('/submit-network', asyncMiddleware( async (req, res, next) => {
             var space = 0, newline = 0;
             for(let x = 0 ; x < network.length ; ++x) {
                 var c = network[x];
-        
+
                 if(c == "\n")
                     newline++;
                 else if(newline == 2 && c == " ")
                     space++;
             }
             var filters = space + 1, blocks = (newline + 1 - (1 + 4 + 14)) / 8;
-            
+
             if(!Number.isInteger(blocks))
                 blocks = 0;
 
@@ -581,7 +581,7 @@ app.post('/submit-network', asyncMiddleware( async (req, res, next) => {
                 // Weights data is too large, store on disk and just store hashes in the database?
                 //
                 // save number of filters and blocks into database
-                { $set: { hash: hash, ip: req.ip, training_count: training_count, training_steps: training_steps, filters : filters, blocks : blocks, description : description }}, 
+                { $set: { hash: hash, ip: req.ip, training_count: training_count, training_steps: training_steps, filters : filters, blocks : blocks, description : description }},
                 { upsert: true },
                 (err, dbres) => {
                     // Need to catch this better perhaps? Although an error here really is totally unexpected/critical.
@@ -997,7 +997,7 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
                     + item.networkID
                     + "</td><td>"
                     + itemmoment.utcOffset(1).format("YYYY-MM-DD HH:mm")
-                    + "</td><td><a href=\"/networks/"
+                    + "</td><td><a href=\"networks/"
                     + item.hash
                     + ".gz\">"
                     + item.hash.slice(0,8)
@@ -1029,8 +1029,8 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
             if (game[0]) {
                 return "<br>"
                     + "View most recent match win by best network " + game[0].winnerhash.slice(0,8) + " vs " + game[0].loserhash.slice(0,8) + ": "
-                    + "[<a href=\"/viewmatch/" + game[0].sgfhash + "?viewer=eidogo\">EidoGo</a> / "
-                    + "<a href=\"/viewmatch/" + game[0].sgfhash + "?viewer=wgo\">WGo</a>] "
+                    + "[<a href=\"viewmatch/" + game[0].sgfhash + "?viewer=eidogo\">EidoGo</a> / "
+                    + "<a href=\"viewmatch/" + game[0].sgfhash + "?viewer=wgo\">WGo</a>] "
                     + "<br>";
             } else {
                 return "";
@@ -1070,18 +1070,18 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
                     + "<td>" + itemmoment.utcOffset(1).format("YYYY-MM-DD HH:mm") + "</td>"
                     + "<td>"
                     + "<div class=\"tooltip\">"
-                    + "<a href=\"/networks/" + item.network1 + ".gz\">" + item.network1.slice(0,8) + "</a>"
+                    + "<a href=\"networks/" + item.network1 + ".gz\">" + item.network1.slice(0,8) + "</a>"
                     + "<span class=\"tooltiptextleft\">"
                     + abbreviateNumber(item.merged1.training_count, 4)
                     + (item.merged1.training_steps ? "+" + abbreviateNumber(item.merged1.training_steps, 3) : "")
                     + (item.merged1.filters && item.merged1.blocks ? `<br/>${item.merged1.filters}x${item.merged1.blocks}` : "")
                     + (item.merged1.description ? `<br/>${item.merged1.description}` : "")
                     + "</span></div>"
-                    + " <a href=\"/match-games/" + item._id + "\">VS</a> ";
+                    + " <a href=\"match-games/" + item._id + "\">VS</a> ";
 
                 if (item.network2) {
                     match_table += "<div class=\"tooltip\">"
-                        + "<a href=\"/networks/" + item.network2 + ".gz\">" + item.network2.slice(0,8) + "</a>"
+                        + "<a href=\"networks/" + item.network2 + ".gz\">" + item.network2.slice(0,8) + "</a>"
                         + "<span class=\"tooltiptextright\">"
                         + abbreviateNumber(item.merged.training_count, 4)
                         + (item.merged.training_steps ? "+" + abbreviateNumber(item.merged.training_steps, 3) : "")
@@ -1138,7 +1138,7 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
         var match_table = match_and_styles[1];
 
         var page = "<html><head>\n<title>Leela Zero</title>\n";
-        page += "<script type=\"text/javascript\" src=\"/static/timeago.js\"></script>\n";
+        page += "<script type=\"text/javascript\" src=\"static/timeago.js\"></script>\n";
         page += "<style>";
         page += "table.networks-table { float: left; margin-right: 40px; margin-bottom: 20px; }\n";
         page += styles;
@@ -1179,15 +1179,15 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
 
         if (mostrecentselfplayhash) {
             page += "View most recent selfplay training game: ";
-            page += "[<a href=\"/view/" + mostrecentselfplayhash + "?viewer=eidogo\">EidoGo</a> / ";
-            page += "<a href=\"/view/" + mostrecentselfplayhash + "?viewer=wgo\">WGo</a>] ";
+            page += "[<a href=\"view/" + mostrecentselfplayhash + "?viewer=eidogo\">EidoGo</a> / ";
+            page += "<a href=\"view/" + mostrecentselfplayhash + "?viewer=wgo\">WGo</a>] ";
             page += "<br>";
         }
 
         if (iprecentselfplayhash) {
             page += "View your most recent selfplay training game: ";
-            page += "[<a href=\"/view/" + iprecentselfplayhash + "?viewer=eidogo\">EidoGo</a> / ";
-            page += "<a href=\"/view/" + iprecentselfplayhash + "?viewer=wgo\">WGo</a>]";
+            page += "[<a href=\"view/" + iprecentselfplayhash + "?viewer=eidogo\">EidoGo</a> / ";
+            page += "<a href=\"view/" + iprecentselfplayhash + "?viewer=wgo\">WGo</a>]";
             page += "<br>";
         }
 
@@ -1195,7 +1195,7 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
         page += "<a href=\"https://sjeng.org/zero/\">Raw SGF files</a>.<br>";
         page += "<a href=\"https://docs.google.com/spreadsheets/d/e/2PACX-1vTsHu7T9vbfLsYOIANnUX9rHAYu7lQ4AlpVIvCfn60G7BxNZ0JH4ulfbADEedPVgwHxaH5MczdH853l/pubchart?oid=286613333&format=interactive\">Original strength graph</a>. (Mostly obsolete.)<br>";
         page += "<br>";
-        page += "<iframe width=\"950\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/elo.html\"></iframe>";
+        page += "<iframe width=\"950\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"static/elo.html\"></iframe>";
         page += "<br><br>Times are in GMT+0100 (CET)<br>\n";
         page += network_table;
         page += match_table;
@@ -1439,7 +1439,7 @@ app.get('/data/elograph.json',  asyncMiddleware( async (req, res, next) => {
             totalgames.count -= item.game_count || 0;
 
             return {
-                "hash": item.hash, 
+                "hash": item.hash,
                 "game_count": item.game_count,
                 "net": (item.training_count === 0 || item.training_count) ? item.training_count : totalgames.count, // mycount
                 "best": !!item.game_count // !! boolean cast
@@ -1520,4 +1520,3 @@ app.get('/data/elograph.json',  asyncMiddleware( async (req, res, next) => {
 
     res.json(json);
 }));
-
