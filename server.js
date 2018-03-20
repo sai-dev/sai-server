@@ -1162,21 +1162,12 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
         page += "</style>\n";
         page += "</head><body>\n";
 
-        page += "Leela Zero is available from: <a href=\"https://github.com/gcp/leela-zero\">Github</a>.<br>";
-        page += "Check out the <a href=\"https://github.com/gcp/leela-zero/blob/master/FAQ.md\">FAQ</a> and ";
-        page += "<a href=\"https://github.com/gcp/leela-zero/blob/master/README.md\">README</a>.<br>";
-        page += "<br>Network 6615567e is a net2net trained 10x128 network test. Not a bug. <a href=\"https://github.com/gcp/leela-zero/issues/965\">Info here</a>.<br>\n";
-        page += "Network 1e2b85cf is best_v1 tested as a reference point. It isn't a normal LZ network. Not a bug.<br>\n";
         page += "<br>Autogtp will automatically download better networks once found.<br>";
         page += "Not each trained network will be a strength improvement over the prior one. Patience please. :)<br>";
         page += "Match games are played at full strength (only " + default_visits + " visits).<br>";
         page += "Training games are played with some randomness in first " + default_randomcnt + " moves, and noise all game long.<br>";
         page += "<br>";
         page += "2018-03-24 <a href=\"https://github.com/gcp/leela-zero/releases\">Leela Zero 0.13 + AutoGTP v15</a>.</b><br>";
-        page += "2018-03-05 We moved to 10 blocks x 128 filters.<br>";
-        page += "2018-02-19 <a href=\"https://github.com/gcp/leela-zero/releases\">Leela Zero 0.12 + AutoGTP v14</a>. <b>Update required.</b><br>";
-        page += "2018-01-20 We moved to 6 blocks x 128 filters.<br>";
-        page += "2017-11-21 We moved to 5 blocks x 64 filters.<br>";
         page += "<br>";
 
         responses.map( response => page += response );
@@ -1195,9 +1186,6 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
             page += "<br>";
         }
 
-        page += "<br><br>";
-        page += "<a href=\"https://sjeng.org/zero/\">Raw SGF files</a>.<br>";
-        page += "<a href=\"https://docs.google.com/spreadsheets/d/e/2PACX-1vTsHu7T9vbfLsYOIANnUX9rHAYu7lQ4AlpVIvCfn60G7BxNZ0JH4ulfbADEedPVgwHxaH5MczdH853l/pubchart?oid=286613333&format=interactive\">Original strength graph</a>. (Mostly obsolete.)<br>";
         page += "<br>";
         page += "<iframe width=\"950\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"static/elo.html\"></iframe>";
         page += "<br><br>Times are in GMT+0100 (CET)<br>\n";
