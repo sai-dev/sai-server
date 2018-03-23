@@ -21,6 +21,7 @@ var default_visits = 3200;
 var default_randomcnt = 30;
 var mongodb_url = 'mongodb://localhost/test';
 var schedule_matches_to_all = true;  // if false, matches are only scheduled to fast clients
+var no_early_fail = true;
 
 var cacheIP24hr = new Cacheman('IP24hr');
 var cacheIP1hr = new Cacheman('IP1hr');
@@ -162,10 +163,14 @@ async function get_pending_matches () {
             //
             switch(SPRT(match.network1_wins, match.network1_losses)) {
                 case false:
+                    if (no_early_fail) {
+                        pending_matches.unshift( match );
+                        console.log("SPRT fail: Unshifting: " + JSON.stringify(match));
+                    }
                     break;
                 case true:
                     pending_matches.unshift( match );
-                    console.log("SPRT: Unshifting: " + JSON.stringify(match));
+                    console.log("SPRT success: Unshifting: " + JSON.stringify(match));
                     break;
                 default:
                     pending_matches.push( match );
@@ -301,7 +306,7 @@ function how_many_games_to_queue(max_games, w_obs, l_obs, pessimistic_rate) {
         return games_left + QUEUE_BUFFER;
     }
 
-    if (SPRT(w_obs, l_obs) === false) {
+    if (SPRT(w_obs, l_obs) === false && ! no_early_fail) {
         return 0;
     }
 
@@ -805,9 +810,14 @@ app.post('/submit-match',  asyncMiddleware( async (req, res, next) => {
                                             if (SPRT(pending_matches[pending_matches.length - 1].network1_wins,
                                                     pending_matches[pending_matches.length - 1].network1_losses) === false)
                                             {
-                                                console.log("SPRT: Early fail pop: " + JSON.stringify(pending_matches[pending_matches.length - 1]));
-                                                pending_matches.pop();
-                                                console.log("SPRT: Early fail post-pop: " + JSON.stringify(pending_matches));
+                                                if  (no_early_fail) {
+                                                    console.log("SPRT: Early fail unshift: " + JSON.stringify(pending_matches[pending_matches.length - 1]));
+                                                    pending_matches.unshift( pending_matches.pop() );
+                                                } else {
+                                                    console.log("SPRT: Early fail pop: " + JSON.stringify(pending_matches[pending_matches.length - 1]));
+                                                    pending_matches.pop();
+                                                    console.log("SPRT: Early fail post-pop: " + JSON.stringify(pending_matches));
+                                                }
                                             }
                                         }
                                     }
