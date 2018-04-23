@@ -4,3 +4,6 @@ task_secret
 network
 static/rss.xml
 static/networks/
+network
+npm-debug.log
+*~
