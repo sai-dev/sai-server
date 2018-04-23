@@ -5,3 +5,6 @@ network
 static/rss.xml
 static/networks/
 logs/*
+network
+npm-debug.log
+*~
