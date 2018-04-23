@@ -1,3 +1,5 @@
 node_modules
 auth_key
 network
+npm-debug.log
+*~
