@@ -19,7 +19,9 @@ var auth_key = String(fs.readFileSync(__dirname + "/auth_key")).trim();
 
 var default_visits = 3200;
 var default_randomcnt = 30;
-var mongodb_url = 'mongodb://localhost/test';
+var base_port = 8080;
+var instance_number = 7;
+var mongodb_url = 'mongodb://localhost/sai'+instance_number;
 var schedule_matches_to_all = true;  // if false, matches are only scheduled to fast clients
 var no_early_fail = true;
 
@@ -391,8 +393,8 @@ MongoClient.connect(mongodb_url, (err, database) => {
         counter =  res[0] && res[0].total;
         console.log ( counter + " games.");
 
-        app.listen(8080, () => {
-            console.log('listening on 8080')
+        app.listen(base_port+instance_number, () => {
+            console.log('listening on '+String(base_port+instance_number))
         });
 
         // Listening to both ports while /next people are moving over to real server adddress
