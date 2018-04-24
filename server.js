@@ -30,10 +30,12 @@ const default_visits = 1600;
 const default_randomcnt = 30;
 const default_resignation_percent = 5;
 const default_no_resignation_probability = 0.1;
+const base_port = 8080;
+const instance_number = 0;
 const schedule_matches_to_all = true;  // if false, matches are only scheduled to fast clients
 const no_early_fail = true;
 
-const MONGODB_URL = "mongodb://localhost/test";
+const MONGODB_URL = "mongodb://localhost/sai"+instance_number;
 
 if (config.RAVEN_DSN) {
     console.log("init raven");
@@ -382,8 +384,8 @@ MongoClient.connect(MONGODB_URL, (err, database) => {
         });
         console.log(counter + " LZ games, " + elf_counter + " ELF games.");
 
-        app.listen(8080, () => {
-            console.log("listening on 8080");
+        app.listen(base_port+instance_number, () => {
+            console.log('listening on '+String(base_port+instance_number))
         });
 
         // Listening to both ports while /next people are moving over to real server adddress
