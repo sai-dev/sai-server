@@ -28,6 +28,7 @@ const default_visits = 1600;
 const default_randomcnt = 30;
 const default_resignation_percent = 5;
 const default_no_resignation_probability = 0.1;
+const schedule_matches_to_all = true;  // if false, matches are only scheduled to fast clients
 
 const MONGODB_URL = "mongodb://localhost/test";
 
@@ -1364,7 +1365,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
  * @returns {bool|object} False if no match to schedule; otherwise, match object
  */
 function shouldScheduleMatch(req, now) {
-  if (!(pending_matches.length && req.params.autogtp != 0 && fastClientsMap.get(req.ip))) {
+  if (!(pending_matches.length && req.params.autogtp != 0 && (schedule_matches_to_all || fastClientsMap.get(req.ip)))) {
     return false;
   }
 
