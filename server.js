@@ -31,6 +31,7 @@ const default_randomcnt = 30;
 const default_resignation_percent = 5;
 const default_no_resignation_probability = 0.1;
 const schedule_matches_to_all = true;  // if false, matches are only scheduled to fast clients
+const no_early_fail = true;
 
 const MONGODB_URL = "mongodb://localhost/test";
 
@@ -230,10 +231,14 @@ async function get_pending_matches() {
             //
             switch (SPRT(match.network1_wins, match.network1_losses)) {
                 case false:
+                    if (no_early_fail) {
+                        pending_matches.unshift( match );
+                        console.log("SPRT fail: Unshifting: " + JSON.stringify(match));
+                    }
                     break;
                 case true:
                     pending_matches.unshift(match);
-                    console.log("SPRT: Unshifting: " + JSON.stringify(match));
+                    console.log("SPRT success: Unshifting: " + JSON.stringify(match));
                     break;
                 default:
                     pending_matches.push(match);
@@ -824,7 +829,7 @@ app.post("/submit-match", asyncMiddleware(async(req, res) => {
     if (pending_match_index >= 0) {
         const m = pending_matches[pending_match_index];
 
-        if (sprt_result === false) {
+        if (sprt_result === false && ! no_early_fail) {
             // remove from pending matches
             console.log("SPRT: Early fail pop: " + JSON.stringify(m));
             pending_matches.splice(pending_match_index, 1);
@@ -844,7 +849,9 @@ app.post("/submit-match", asyncMiddleware(async(req, res) => {
                 m.network1_losses++;
             }
 
-            if (sprt_result === true) {
+            // Check > 1 since we'll run to 400 even on a SPRT pass, but will do it at end.
+            //
+            if ( (sprt_result === true || sprt_result === false) && pending_matches.length > 1) {
                 console.log("SPRT: Early pass unshift: " + JSON.stringify(m));
                 pending_matches.splice(pending_match_index, 1); // cut out the match
                 if (m.game_count < m.number_to_play) pending_matches.unshift(m); // continue a SPRT pass at end of queue
@@ -1435,7 +1442,8 @@ function shouldScheduleMatch(req, now) {
                 match.network1_wins,
                 match.network1_losses,
                 PESSIMISTIC_RATE,
-                bestRatings.has(match.network1));
+                bestRatings.has(match.network1),
+                no_early_fail);
   const result = needed > requested;
   console.log(`Need ${needed} match games. Requested ${requested}, deleted ${deleted}. Oldest ${oldest}m ago. Will schedule ${result ? "match" : "selfplay"}.`);
 

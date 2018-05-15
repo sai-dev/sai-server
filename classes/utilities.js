@@ -292,8 +292,11 @@ function SPRT(w, l) {
 
 const QUEUE_BUFFER = 25;
 
-function how_many_games_to_queue(max_games, w_obs, l_obs, pessimistic_rate, isBest) {
+function how_many_games_to_queue(max_games, w_obs, l_obs, pessimistic_rate, isBest, no_early_fail) {
     const games_left = max_games - w_obs - l_obs;
+
+    if (no_early_fail)
+        return games_left + QUEUE_BUFFER;
 
     if (isBest || SPRT(w_obs, l_obs) === true) {
         return games_left;
