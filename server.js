@@ -46,6 +46,7 @@ set_task_verification_secret(String(fs.readFileSync(__dirname + "/task_secret"))
 var default_visits = 3200;
 var default_randomcnt = 999;
 var mongodb_url = 'mongodb://localhost/test';
+var schedule_matches_to_all = true;  // if false, matches are only scheduled to fast clients
 
 var cacheIP24hr = new Cacheman('IP24hr');
 var cacheIP1hr = new Cacheman('IP1hr');
@@ -1249,7 +1250,7 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
  * @returns {bool|object} False if no match to schedule; otherwise, match object
  */
 function shouldScheduleMatch (req, now) {
-  if (!(pending_matches.length && req.params.version!=0 && fastClientsMap.get(req.ip))) {
+  if (!(pending_matches.length && req.params.version!=0 && (schedule_matches_to_all || fastClientsMap.get(req.ip)))) {
     return false;
   }
 
