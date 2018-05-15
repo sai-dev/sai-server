@@ -187,7 +187,7 @@ function how_many_games_to_queue(max_games, w_obs, l_obs, pessimistic_rate) {
         return games_left + QUEUE_BUFFER;
     }
 
-    if (SPRT(w_obs, l_obs) === false) {
+    if (SPRT(w_obs, l_obs) === false && ! no_early_fail) {
         return 0;
     }
 
