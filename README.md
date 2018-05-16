@@ -52,6 +52,9 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `training_count`: number of matches in DB when training has been computed
 - `training_steps`: number of steps of training
 - `game_count`: self-plays with this network
+- `filters`: number of filters
+- `blocks`: number of blocks
+- `description`: description of the network
 
 ## games
 
@@ -115,12 +118,14 @@ This is a very brief documentation of the web API of the server.
   - `training_counts`: (optional) number of games in the DB when the training data has been exported. Default value is the number of games in the db.
   - `training_steps`: (optional) number of training steps of the network.
   - `key`: password for the privileged API
+  - `description`: description of the network which is saved in the database.
 - `/submit`: submit the result of a self-play. The game is added to the `games` collection, and the counter of `self-plays` for the related network is increased.  It is used by `autogtp` when a self-play is terminated.
 - `/get-task/<version>`: requests a task with the given protocol version (currently ignored). The result is a json encoding the type of match (self-play vs match) and other parameters for `autogtp` and `leela-zero`. Used by `autogtp` when requesting a task.
 - `/view/<hash>`: displays the SGF of the specified self-play.
 - `/match-games/<matchid>`: displays the list of plays for the given match.
 - `/viewmatch/<hash>`: displays the SGF of the specifietd match-play.
-- `/data/elograph.json`: ???
+- `/viewmatch/<hash>.sgf`: returns the SGF of the specifietd match-play.
+- `/data/elograph.json`: displays the ELO graph
 - `/`: displays various statistics and general informations.
 
 # Examples 
@@ -128,7 +133,7 @@ This is a very brief documentation of the web API of the server.
 ## Submit a network
 
 ```
-curl -F 'weights=@<network-file>' -F 'training_count=0' -F 'training_steps=80000' -F 'key=<password>' <server-url>/submit-network
+curl -F 'weights=@<network-file>' -F 'training_count=0' -F 'training_steps=80000' -F 'key=<password>' -F 'description=<description>' <server-url>/submit-network
 ```
 
 ## Request a match
