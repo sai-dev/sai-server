@@ -25,15 +25,17 @@ const Raven = require("raven");
 const config = require("./config");
 
 const archiver = require('archiver');
+const ini = require('ini');
 
-const default_visits = 1600;
-const default_randomcnt = 30;
-const default_resignation_percent = 5;
-const default_no_resignation_probability = 0.1;
-const base_port = 8080;
-const instance_number = 0;
-const schedule_matches_to_all = true;  // if false, matches are only scheduled to fast clients
-const no_early_fail = true;
+const configsai = ini.parse(fs.readFileSync(__dirname + "/config.ini", "utf-8"));
+const default_visits = configsai.default_visits ? Number(configsai.default_visits) : 1600;
+const default_randomcnt = configsai.default_randomcnt ? Number(configsai.default_randomcnt) : 30;
+const default_resignation_percent = configsai.default_resignation_percent ? Number(configsai.default_resignation_percent) : 5;
+const default_no_resignation_probability = configsai.default_no_resignation_probability ? Number(configsai.default_no_resignation_probability) : 0.1;
+const base_port = configsai.base_port ? Number(configsai.base_port) :  8080;
+const instance_number = configsai.instance_number ? Number(configsai.instance_number) : 0;
+const schedule_matches_to_all = configsai.schedule_matches_to_all ? Boolean(configsai.schedule_matches_to_all) : false;
+const no_early_fail = configsai.no_early_fail ?  Boolean(configsai.no_early_fail) : false;
 
 const MONGODB_URL = "mongodb://localhost/sai"+instance_number;
 
