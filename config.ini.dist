@@ -1,0 +1,10 @@
+; default config.ini
+default_visits = 1600
+default_randomcnt = 30
+default_resignation_percent = 5
+default_no_resignation_probability = 0.1
+base_port = 8080
+instance_number = 0
+; if false, matches are only scheduled to fast clients
+schedule_matches_to_all = false
+no_early_fail = false

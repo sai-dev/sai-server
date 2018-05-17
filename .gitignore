@@ -7,4 +7,5 @@ static/networks/
 logs/*
 network
 npm-debug.log
+config.ini
 *~
