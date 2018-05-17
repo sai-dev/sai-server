@@ -6,4 +6,5 @@ static/rss.xml
 static/networks/
 network
 npm-debug.log
+config.ini
 *~
