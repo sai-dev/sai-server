@@ -612,7 +612,10 @@ app.post("/submit-network", asyncMiddleware((req, res) => {
         if (!set.training_count) {
             const cursor = db.collection("networks").aggregate([{ $group: { _id: 1, count: { $sum: "$game_count" } } }]);
             const totalgames = await cursor.next();
-            set.training_count = totalgames.count;
+            if (totalgames)
+                set.training_count = totalgames.count;
+            else
+                set.training_count = 0;
         }
 
         // Prepare variables for printing messages
