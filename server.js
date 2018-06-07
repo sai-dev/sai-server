@@ -12,18 +12,21 @@ const zlib = require('zlib');
 const converter = require('hex2dec');
 const Cacheman = require('cacheman');
 const archiver = require('archiver');
+const ini = require('ini');
 
 const app = express();
 
 var auth_key = String(fs.readFileSync(__dirname + "/auth_key")).trim();
 
-var default_visits = 3200;
-var default_randomcnt = 30;
-var base_port = 8080;
-var instance_number = 7;
+var config = ini.parse(fs.readFileSync(__dirname + "/config.ini", "utf-8"));
+var default_visits = Number(config.default_visits) || 3200;
+var default_randomcnt = Number(config.default_randomcnt) || 999;
+var base_port = Number(config.base_port) || 8080;
+var instance_number = Number(config.instance_number) || 0;
+// if false, matches are only scheduled to fast clients
+var schedule_matches_to_all = Boolean(config.schedule_matches_to_all) || false;
+var no_early_fail = Boolean(config.no_early_fail) || false;
 var mongodb_url = 'mongodb://localhost/sai'+instance_number;
-var schedule_matches_to_all = true;  // if false, matches are only scheduled to fast clients
-var no_early_fail = true;
 
 var cacheIP24hr = new Cacheman('IP24hr');
 var cacheIP1hr = new Cacheman('IP1hr');

@@ -1,0 +1,7 @@
+; default config.ini
+default_visits = 3200
+default_randomcnt = 999
+base_port = 8080
+instance_number = 0
+schedule_matches_to_all = false
+no_early_fail = false
