@@ -44,7 +44,7 @@ process.on('uncaughtException', (err) => {
 
 // https://blog.tompawlak.org/measure-execution-time-nodejs-javascript
 
-var counter;
+var counter = 0;
 var best_network_mtimeMs = 0;
 var best_network_hash_promise = null;
 var db;
@@ -624,7 +624,10 @@ app.post('/submit-network', asyncMiddleware( async (req, res, next) => {
                 var cursor = db.collection("networks").aggregate( [ { $group: { _id: 1, count: { $sum: "$game_count" } } } ]);
                 var totalgames = await cursor.next();
 
-                training_count = totalgames.count;
+                if (totalgames)
+                    training_count = totalgames.count;
+                else
+                    training_count = 0;
             } else {
                 training_count = Number(req.body.training_count);
             }
