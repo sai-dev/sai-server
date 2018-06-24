@@ -26,6 +26,7 @@ const config = require("./config");
 
 const archiver = require('archiver');
 const ini = require('ini');
+const SGFParser = require('smartgame');
 
 const configsai = ini.parse(fs.readFileSync(__dirname + "/config.ini", "utf-8"));
 const default_visits = configsai.default_visits ? Number(configsai.default_visits) : 1600;
@@ -148,6 +149,23 @@ let db;
 //
 let pending_matches = [];
 const MATCH_EXPIRE_TIME = 30 * 60 * 1000; // matches expire after 30 minutes. After that the match will be lost and an extra request will be made.
+
+function analyze_sgf_comments (comment) {
+    [alpkt, beta, pi, avg_eval, avg_bonus] = comment.split(",").map(parseFloat);
+    return -alpkt;
+}
+
+function analyze_sgf(sgf) {
+    const nodes = SGFParser.parse(sgf).gameTrees[0].nodes;
+    const result = [ ];
+    for (const pos in nodes) {
+        if (pos == 0) continue;
+        const value = analyze_sgf_comments(nodes[pos].C);
+        result.unshift({ move: Number(pos), priority: value });
+    }
+    result.sort( (a,b) => b.priority - a.priority );
+    return result;
+}
 
 function get_options_hash(options) {
     if (options.visits) {
@@ -1025,6 +1043,16 @@ app.get("/matches", asyncMiddleware(async(req, res) => {
     };
 
     res.render("matches", pug_data);
+}));
+
+app.get('/analyze/:hash(\\w+)', asyncMiddleware(async (req, res, next) => {
+    const game = await db.collection("games")
+        .findOne( { sgfhash: req.params.hash }, { sgf: true });
+    if (! game) {
+        return res.status(404).render("404");
+    }
+    const result = analyze_sgf(game.sgf);
+    res.send(result);
 }));
 
 app.get("/network-profiles", asyncMiddleware(async(req, res) => {

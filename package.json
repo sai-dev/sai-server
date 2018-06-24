@@ -42,6 +42,7 @@
     "retricon-without-canvas": "^1.0.0",
     "rotating-file-stream": "^1.3.6",
     "rss": "^1.2.2",
+    "smartgame": "^0.1.5",
     "zlib": "^1.0.5"
   },
   "devDependencies": {
