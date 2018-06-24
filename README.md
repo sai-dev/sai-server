@@ -64,6 +64,24 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `blocks`: number of blocks
 - `description`: description of the network
 
+## self_plays
+
+- `_id`: internal identifier
+- `ip`: IP address who submitted the game
+- `networkhash`: hash of the network to use for self play
+- `sgfhash`: hash of the sgf in tha games collection where to start from
+- `movescount`: number of the move in the sgf where to start from
+- `komi`: komi value to use for self play
+- `noise_value`: Dirichilet noise to use for self play
+- `lambda`: lambda value
+- `resignation_percent`: probability of resignation
+- `no_resignation_probability`: probability resignation_percent is ignored and set to 0
+- `visits`: visits value in leelaz
+- `number_to_play`: number of self-plays to play
+- `game_count`: self-plays with this settings
+- `emabled`: 1 if enabled, 0 otherwise
+- `priority`: priority value
+
 ## games
 
 - `_id`: internal identifier
