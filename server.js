@@ -1452,6 +1452,36 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
     }
 }));
 
+app.get('/view/:hash(\\w+).sgf', (req, res) => {
+    Promise.all([
+        db.collection("games").findOne({ sgfhash: req.params.hash }, { _id: 0, sgf: 1 })
+        .then((game) => {
+            return (game.sgf);
+        }),
+    ]).then((responses) => {
+        res.setHeader("Content-Disposition", "attachment; filename=\"" + req.params.hash + ".sgf\"");
+        res.setHeader("Content-Type", "application/x-go-sgf");
+        res.send(responses[0]);
+    }).catch( err => {
+        res.send("No selfplay was found with hash " + req.params.hash);
+    });
+});
+
+app.get('/view/:hash(\\w+).train', (req, res) => {
+    Promise.all([
+        db.collection("games").findOne({ sgfhash: req.params.hash }, { _id: 0, data: 1 })
+        .then((game) => {
+            return (game.data);
+        }),
+    ]).then((responses) => {
+        res.setHeader("Content-Disposition", "attachment; filename=\"" + req.params.hash + ".train\"");
+        res.setHeader("Content-Type", "text/plain");
+        res.send(responses[0]);
+    }).catch( err => {
+        res.send("No selfplay was found with hash " + req.params.hash);
+    });
+});
+
 app.get('/view/:hash(\\w+)', (req, res) => {
     Promise.all([
         db.collection("games").findOne({ sgfhash: req.params.hash }, { _id: 0, sgf: 1 })
