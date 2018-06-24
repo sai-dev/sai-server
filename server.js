@@ -1552,7 +1552,7 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         priority: parseFloat(req.body.priority),
         noise_value: req.body.noise_value  ? parseFloat(req.body.noise_value) : default_noise_value,
         komi: req.body.komi ? parseFloat(req.body.komi) : default_komi,
-        lambda: req.body.komi ? parseFloat(req.body.lambda) : default_lambda,
+        lambda: req.body.lambda ? parseFloat(req.body.lambda) : default_lambda,
         number_to_play: req.body.number_to_play ? parseInt(req.body.number_to_play) : 1,
         game_count: 0,
         ip: req.headers['x-real-ip'] || req.ip
