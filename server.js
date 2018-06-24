@@ -51,7 +51,6 @@ var default_visits = Number(config.default_visits) || 3200;
 var default_randomcnt = Number(config.default_randomcnt) || 999;
 var base_port = Number(config.base_port) || 8080;
 var instance_number = Number(config.instance_number) || 0;
-// if false, matches are only scheduled to fast clients
 var schedule_matches_to_all = Boolean(config.schedule_matches_to_all) || false;
 var no_early_fail = Boolean(config.no_early_fail) || false;
 var mongodb_url = 'mongodb://localhost/sai'+instance_number;
