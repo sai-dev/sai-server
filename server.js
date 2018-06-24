@@ -1501,12 +1501,17 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
             options.komi = String(self_play.komi);
             options.noise_value = String(self_play.noise_value);
             options.lambda = String(self_play.lambda);
-            task.movescount = String(self_play.movescount);
-            task.sgfhash = String(self_play.sgfhash);
+            task.hash = String(self_play.networkhash);
             task.selfplay_id = String(self_play._id);
+            if (self_play.sgfhash) {
+                task.sgfhash = String(self_play.sgfhash);
+                task.movescount = String(self_play.movescount);
+            }
+        } else {
+            task.hash = best_network_hash;
         }
 
-        task.hash = best_network_hash;
+
 
         // For now, have autogtp 16 or newer play half of self-play with
         // Facebook's ELF Open Go network, which uses network version 2.
@@ -1534,21 +1539,13 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         return res.status(400).send(msg+"\n");
     };
 
-    if (! req.body.sgfhash)
-        return logAndFail('No sgfhash provided.');
-    if (! req.body.movescount)
-        return logAndFail('No movescount provided.');
+
+    if (req.body.sgfhash && req.body.networkhash)
+        return logAndFail('Both parameters sgfhash and networkhash are provided');
     if (! req.body.priority)
         return logAndFail('No priority provided');
 
-    var selfplay = await db.collection("games").findOne({ "sgfhash": req.body.sgfhash }, { _id: 1, networkhash: 1 });
-    if (! selfplay)
-        return logAndFail("No selfplay was found with hash " + req.body.sgfhash);
-
     var set =  {
-        networkhash: selfplay.networkhash,
-        sgfhash: req.body.sgfhash,
-        movescount: parseInt(req.body.movescount),
         priority: parseFloat(req.body.priority),
         noise_value: req.body.noise_value  ? parseFloat(req.body.noise_value) : default_noise_value,
         komi: req.body.komi ? parseFloat(req.body.komi) : default_komi,
@@ -1559,10 +1556,30 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
     };
     set.enabled = set.number_to_play > 0;
 
+
+    if (req.body.sgfhash) {
+        if (! req.body.movescount)
+            return logAndFail('No movescount provided, although sgfhash is provided');
+        var selfplay = await db.collection("games").findOne({ "sgfhash": req.body.sgfhash }, { _id: 1, networkhash: 1 });
+        if (! selfplay)
+            return logAndFail("No selfplay was found with hash " + req.body.sgfhash);
+        set.networkhash = selfplay.networkhash;
+        set.sgfhash = req.body.sgfhash;
+        set.movescount = parseInt(req.body.movescount);
+    } else if (req.body.networkhash) {
+        var network = await db.collection("networks").findOne({ "hash": req.body.networkhash }, { _id: 1 });
+        if (! network)
+            return logAndFail("No network was found with hash " + req.body.networkhash);
+        set.networkhash = req.body.networkhash;
+    } else {
+        set.networkhash = await get_best_network_hash();
+    }
+
+
     await db.collection("self_plays").insertOne(set);
 
     console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " uploaded self-play");
-    res.send("Self-play request for game " + set.sgfhash + " stored in database.\n");
+    res.send("Self-play request for game " + set.sgfhash + " network "  + set.networkhash + " stored in database.\n");
 }));
 
 app.get('/view/:hash(\\w+).sgf', (req, res) => {
