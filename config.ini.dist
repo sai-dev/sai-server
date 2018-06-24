@@ -1,6 +1,9 @@
 ; default config.ini
 default_visits = 3200
 default_randomcnt = 999
+default_komi = 7.5
+default_noise_value = 0.03
+default_lambda = 0.5
 base_port = 8080
 instance_number = 0
 ; if false, matches are only scheduled to fast clients

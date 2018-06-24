@@ -49,6 +49,9 @@ set_task_verification_secret(String(fs.readFileSync(__dirname + "/task_secret"))
 var config = ini.parse(fs.readFileSync(__dirname + "/config.ini", "utf-8"));
 var default_visits = Number(config.default_visits) || 3200;
 var default_randomcnt = Number(config.default_randomcnt) || 999;
+var default_komi = Number(config.default_komi) || 7.5;
+var default_noise_value = Number(config.default_noise_value) || 0.03;
+var default_lambda = Number(config.default_lambda) || 0.5;
 var base_port = Number(config.base_port) || 8080;
 var instance_number = Number(config.instance_number) || 0;
 var schedule_matches_to_all = Boolean(config.schedule_matches_to_all) || false;
@@ -93,9 +96,9 @@ var MATCH_EXPIRE_TIME = 30 * 60 * 1000; // matches expire after 30 minutes. Afte
 
 function get_options_hash (options) {
     if (options.visits) {
-        return checksum("" + options.visits + options.resignation_percent + options.noise + options.randomcnt).slice(0,6);
+        return checksum("" + options.visits + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value).slice(0,6);
     } else {
-        return checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt).slice(0,6);
+        return checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value).slice(0,6);
     }
 };
 
@@ -1423,7 +1426,8 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
         // TODO In time we'll change this to a visits default instead of options default, for new --visits command
         //
         //var options = {"playouts": "1600", "resignation_percent": "10", "noise": "true", "randomcnt": "30"};
-        var options = {"playouts": "0", "visits": String(default_visits), "resignation_percent": "5", "noise": "true", "randomcnt": String(default_randomcnt)};
+        var options = {"playouts": "0", "visits": String(default_visits), "resignation_percent": "5", "noise": "true", "randomcnt": String(default_randomcnt),
+                       "komi": String(default_komi), "noise_value": String(default_noise_value), "lambda": String(default_lambda) };
 
         if (Math.random() < .2) options.resignation_percent = "0";
 
