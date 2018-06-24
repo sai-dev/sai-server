@@ -145,7 +145,7 @@ This is a very brief documentation of the web API of the server.
 - `/network-profiles`: displays a page with detailed informations on non-ELF networks.
 - `/network-profiles/<hash>`: displays a page with detailed informations on the non-ELF network with given hash.
 - `/rss`: returns an RSS feed of best networks
-- `/get-task/<version>`: requests a task with the given protocol version (currently ignored). The result is a json encoding the type of match (self-play vs match) and other parameters for `autogtp` and `leela-zero`. Used by `autogtp` when requesting a task.
+- `/get-task/<version>`: requests a task. Parameter `version` is the version of AutoGTP which is asking for a new task. In the original AutoGTP, if version is at least 16, a quarter of self-plays are played with the Facebook's ELF Open Go network. This behaviour is disabled in SAI since the ELF Open Go network is not compatible with SAI (it is a 19x19 network). The result is a json encoding the type of games (self-play vs match) and other parameters.
 - `/view/<hash>`: displays the SGF of the specified self-play.
 - `/match-games/<matchid>`: displays the list of plays for the given match.
 - `/viewmatch/<hash>`: displays the SGF of the specifietd match-play.
