@@ -52,7 +52,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `_id`: internal identifier
 - `hash`: hash value (it is 62b5417b64c46976795d10a6741801f15f857e5029681a42d02c9852097df4b9 for ELF networks)
 - `ip`: IP address who submitted the network
-- `training_count`: number of matches in DB when training has been computed
+- `training_count`: number of games in DB when training has been computed
 - `training_steps`: number of steps of training
 - `game_count`: self-plays with this network
 - `filters`: number of filters
@@ -67,7 +67,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `data`: training data
 - `ip`: IP address who submitted the game
 - `movescount`: number of moves in the SGF
-. `networkhash`: hash of the network used for this game
+- `networkhash`: hash of the network used for this game
 - `randomseed`: seed used to play this game
 - `sgf`: SGF of the games
 - `winnercolor`: color of the winner
