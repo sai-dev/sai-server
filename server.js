@@ -13,6 +13,7 @@ const converter = require('hex2dec');
 const Cacheman = require('cacheman');
 const archiver = require('archiver');
 const ini = require('ini');
+const SGFParser = require('smartgame');
 
 const app = express();
 const Busboy = require('busboy');
@@ -56,6 +57,8 @@ var base_port = Number(config.base_port) || 8080;
 var instance_number = Number(config.instance_number) || 0;
 var schedule_matches_to_all = Boolean(config.schedule_matches_to_all) || false;
 var no_early_fail = Boolean(config.no_early_fail) || false;
+var sgfnode_explore_minvalue = Number(config.sgfnode_explore_minvalue) || 0;
+var sgfnode_explore_maxnums = Number(config.sgfnode_explore_maxnums) || 3;
 var mongodb_url = 'mongodb://localhost/sai'+instance_number;
 
 var cacheIP24hr = new Cacheman('IP24hr');
@@ -92,7 +95,22 @@ var db;
 var pending_matches = [];
 var MATCH_EXPIRE_TIME = 30 * 60 * 1000; // matches expire after 30 minutes. After that the match will be lost and an extra request will be made.
 
+function analyze_sgf_comments (comment) {
+    [alpkt, beta, pi, avg_eval, avg_bonus] = comment.split(",").map(parseFloat);
+    return -alpkt;
+}
 
+function analyze_sgf(sgf) {
+    var nodes = SGFParser.parse(sgf).gameTrees[0].nodes;
+    var result = [ ];
+    for (const pos in nodes) {
+        if (pos == 0) continue;
+        var value = analyze_sgf_comments(nodes[pos].C);
+        if (value > sgfnode_explore_minvalue) result.unshift({ move: Number(pos), priority: value });
+    }
+    result.sort( (a,b) => b.priority - a.priority );
+    return result.slice(0, sgfnode_explore_maxnums);
+}
 
 function get_options_hash (options) {
     if (options.visits) {
@@ -921,6 +939,16 @@ app.post('/submit', (req, res) => {
 
     }
 });
+
+app.get('/analyze/:hash(\\w+)', asyncMiddleware(async (req, res, next) => {
+    var game = await db.collection("games")
+        .findOne( { sgfhash: req.params.hash }, { sgf: true });
+    if (! game) {
+        return res.status(404).render("404");
+    }
+    var result = analyze_sgf(game.sgf);
+    res.send(result);
+}));
 
 app.get('/network-profiles', asyncMiddleware(async (req, res, next) => {
     var networks = await db.collection("networks")
