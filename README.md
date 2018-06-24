@@ -87,7 +87,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `network1_wins`: number of times the first network has won a game
 - `game_count`: number of playes games
 - `number_to_play`: number of games to play
-- `options`: a dictionary with options for leelaz ( `resignation_percent`, `randomcnt`, `noise`, `playouts` , `visits` )
+- `options`: a dictionary with options for leelaz ( `resignation_percent`, `randomcnt`, `noise`, `playouts` , `visits`, `komi`, `lambda` )
 - `options_hash`: hash of the `options` dictionary
 
 ## match_games

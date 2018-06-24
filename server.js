@@ -32,6 +32,9 @@ const default_visits = configsai.default_visits ? Number(configsai.default_visit
 const default_randomcnt = configsai.default_randomcnt ? Number(configsai.default_randomcnt) : 30;
 const default_resignation_percent = configsai.default_resignation_percent ? Number(configsai.default_resignation_percent) : 5;
 const default_no_resignation_probability = configsai.default_no_resignation_probability ? Number(configsai.default_no_resignation_probability) : 0.1;
+const default_komi = configsai.default_komi ? Number(configsai.default_komi) : 7.5;
+const default_noise_value = configsai.default_noise_value ?  Number(configsai.default_noise_value) : 0.03;
+const default_lambda = configsai.default_lambda ? Number(configsai.default_lambda) : 0.5;
 const base_port = configsai.base_port ? Number(configsai.base_port) :  8080;
 const instance_number = configsai.instance_number ? Number(configsai.instance_number) : 0;
 const schedule_matches_to_all = configsai.schedule_matches_to_all ? Boolean(configsai.schedule_matches_to_all) : false;
@@ -148,9 +151,9 @@ const MATCH_EXPIRE_TIME = 30 * 60 * 1000; // matches expire after 30 minutes. Af
 
 function get_options_hash(options) {
     if (options.visits) {
-        return checksum("" + options.visits + options.resignation_percent + options.noise + options.randomcnt).slice(0, 6);
+        return checksum("" + options.visits + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value + options.lambda).slice(0, 6);
     } else {
-        return checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt).slice(0, 6);
+        return checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value + options.lambda).slice(0, 6);
     }
 }
 
@@ -525,9 +528,17 @@ app.post('/request-match', (req, res) => {
         req.body.number_to_play = 400;
         //return res.status(400).send('No number_to_play specified.');
 
+    if (!req.body.komi)
+        req.body.komi = default_komi;
+
+    if (!req.body.lambda)
+        req.body.lambda = default_lambda;
+
     const options = { resignation_percent: Number(req.body.resignation_percent),
         randomcnt: Number(req.body.randomcnt),
-        noise: String(req.body.noise) };
+        noise: String(req.body.noise),
+        komi: Number(req.body.komi),
+        lambda: Number(req.body.lambda) };
 
     if (req.body.playouts) {
         options.playouts = Number(req.body.playouts);
@@ -1522,7 +1533,8 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
         const task = { cmd: "selfplay", hash: "", required_client_version, minimum_autogtp_version: required_client_version, random_seed, minimum_leelaz_version: required_leelaz_version };
 
         //var options = {"playouts": "1600", "resignation_percent": "10", "noise": "true", "randomcnt": "30"};
-        const options = { playouts: "0", visits: String(default_visits+1), resignation_percent: String(default_resignation_percent), noise: "true", randomcnt: String(default_randomcnt)};
+        const options = { playouts: "0", visits: String(default_visits+1), resignation_percent: String(default_resignation_percent), noise: "true", randomcnt: String(default_randomcnt),
+                          komi: String(default_komi), noise_value: String(default_noise_value), lambda: String(default_lambda) };
 
         if (Math.random() < default_no_resignation_probability) options.resignation_percent = "0";
 
