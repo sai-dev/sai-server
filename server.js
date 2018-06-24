@@ -1030,6 +1030,41 @@ app.post("/submit", (req, res) => {
                             }
                         }
                     );
+
+                    if (req.body.selfplay_id) {
+                        const selfplay_id = ObjectId(req.body.selfplay_id);
+                        db.collection("self_plays").findOne(
+                            { _id: selfplay_id },
+                            (err, dbres) => {
+                                if (err) {
+                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " uploaded ELF game #" + elf_counter + ": " + sgfhash + " WRONG SELFPLAY ID " + selfplay_id + " : " + err);
+                                } else {
+                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " updating selfplay #" + selfplay_id);
+                                    if (dbres.game_count + 1 >=  dbres.number_to_play) {
+                                        db.collection("self_plays").updateOne(
+                                            { _id: selfplay_id },
+                                            { $inc: { game_count: 1 },  $set: { enabled: false } },
+                                            { },
+                                            (err, dbres) => {
+                                                if (err) console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " selfplay " + selfplay_id + " DISABLE ERROR: " + err);
+                                            }
+                                        );
+                                    } else {
+                                        db.collection("self_plays").updateOne(
+                                            { _id: selfplay_id },
+                                            { $inc: { game_count: 1 } },
+                                            { },
+                                            (err, dbres) => {
+                                                if (err) console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " selfplay " + selfplay_id + " INCREMENT ERROR: " + err);
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        )
+
+                    }
+
                 }
             });
         }
@@ -1564,9 +1599,25 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
         const options = { playouts: "0", visits: String(default_visits+1), resignation_percent: String(default_resignation_percent), noise: "true", randomcnt: String(default_randomcnt),
                           komi: String(default_komi), noise_value: String(default_noise_value), lambda: String(default_lambda) };
 
-        if (Math.random() < default_no_resignation_probability) options.resignation_percent = "0";
-
-        task.hash = best_network_hash;
+        // check if there are special self-plays for the best-network
+        const self_play = await db.collection("self_plays").find({ networkhash: best_network_hash, enabled: true }).sort({'priority': -1}).limit(1).next();
+        if (self_play) {
+            options.komi = String(self_play.komi);
+            options.noise_value = String(self_play.noise_value);
+            options.lambda = String(self_play.lambda);
+            options.visits = String(self_play.visits);
+            options.resignation_percent = String(self_play.resignation_percent);
+            task.hash = String(self_play.networkhash);
+            task.selfplay_id = String(self_play._id);
+            if (self_play.sgfhash) {
+                task.sgfhash = String(self_play.sgfhash);
+                task.movescount = String(self_play.movescount);
+            }
+            if (Math.random() < self_play.no_resignation_probability) options.resignation_percent = "0";
+        } else {
+            task.hash = best_network_hash;
+            if (Math.random() < default_no_resignation_probability) options.resignation_percent = "0";
+        }
 
         // For now, have newer autogtp and leelaz play some self-play with
         // Facebook's ELF Open Go network, which uses network version 2.
@@ -1583,6 +1634,62 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
 
         console.log(`${req.ip} (${req.headers["x-real-ip"]}) got task: selfplay ${JSON.stringify(task)}`);
     }
+}));
+
+app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
+    const logAndFail = msg => {
+        console.log(`${req.ip} (${req.headers['x-real-ip']}) /request-selfplay: ${msg}`);
+        console.log(`files: ${JSON.stringify(Object.keys(req.files || {}))}, body: ${JSON.stringify(req.body)}`);
+        return res.status(400).send(msg+"\n");
+    };
+
+    if (!req.body.key || req.body.key != auth_key) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(auth_key) + "'");
+
+        return res.status(400).send('Incorrect key provided.');
+    }
+
+    if (req.body.sgfhash && req.body.networkhash)
+        return logAndFail('Both parameters sgfhash and networkhash are provided');
+    if (! req.body.priority)
+        return logAndFail('No priority provided');
+
+    const set =  {
+        priority: parseFloat(req.body.priority),
+        noise_value: req.body.noise_value  ? parseFloat(req.body.noise_value) : default_noise_value,
+        komi: req.body.komi ? parseFloat(req.body.komi) : default_komi,
+        lambda: req.body.lambda ? parseFloat(req.body.lambda) : default_lambda,
+        number_to_play: req.body.number_to_play ? parseInt(req.body.number_to_play) : 1,
+        visits: req.body.visits ? parseInt(req.body.visits) : default_visits,
+        resignation_percent: req.body.resignation_percent ? parseFloat(req.body.resignation_percent) : default_resignation_percent,
+        no_resignation_probability: req.body.no_resignation_probability ? parseFloat(req.body.no_resignation_probability) : default_no_resignation_probability,
+        game_count: 0,
+        ip: req.headers['x-real-ip'] || req.ip
+    };
+    set.enabled = set.number_to_play > 0;
+
+    if (req.body.sgfhash) {
+        if (! req.body.movescount)
+            return logAndFail('No movescount provided, although sgfhash is provided');
+        const selfplay = await db.collection("games").findOne({ "sgfhash": req.body.sgfhash }, { _id: 1, networkhash: 1 });
+        if (! selfplay)
+            return logAndFail("No selfplay was found with hash " + req.body.sgfhash);
+        set.networkhash = selfplay.networkhash;
+        set.sgfhash = req.body.sgfhash;
+        set.movescount = parseInt(req.body.movescount);
+    } else if (req.body.networkhash) {
+        const network = await db.collection("networks").findOne({ "hash": req.body.networkhash }, { _id: 1 });
+        if (! network)
+            return logAndFail("No network was found with hash " + req.body.networkhash);
+        set.networkhash = req.body.networkhash;
+    } else {
+        set.networkhash = await get_best_network_hash();
+    }
+
+    await db.collection("self_plays").insertOne(set);
+
+    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " uploaded self-play");
+    res.send("Self-play request for game " + set.sgfhash + " network "  + set.networkhash + " stored in database.\n");
 }));
 
 app.get("/view/:hash(\\w+).sgf", (req, res) => {
