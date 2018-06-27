@@ -180,7 +180,7 @@ function SPRT(w, l) {
 
 var QUEUE_BUFFER = 25;
 
-function how_many_games_to_queue(max_games, w_obs, l_obs, pessimistic_rate) {
+function how_many_games_to_queue(max_games, w_obs, l_obs, pessimistic_rate, no_early_fail) {
     var games_left = max_games - w_obs - l_obs;
 
     if (SPRT(w_obs, l_obs) === true) {

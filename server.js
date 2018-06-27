@@ -1413,7 +1413,8 @@ function shouldScheduleMatch (req, now) {
                 match.number_to_play,
                 match.network1_wins,
                 match.network1_losses,
-                PESSIMISTIC_RATE);
+                PESSIMISTIC_RATE,
+                no_early_fail);
   var result = needed > requested;
   console.log(`Need ${needed} match games. Requested ${requested}, deleted ${deleted}. Oldest ${oldest}m ago. Will schedule ${result ? "match" : "selfplay"}.`);
 
