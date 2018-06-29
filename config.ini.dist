@@ -9,5 +9,5 @@ instance_number = 0
 ; if false, matches are only scheduled to fast clients
 schedule_matches_to_all = false
 no_early_fail = false
-sgfnode_explore_minvalue = 0;
-sgfnode_explore_maxnums = 3;
+branching_coefficient = 0.1
+branching_maxbranches = 3

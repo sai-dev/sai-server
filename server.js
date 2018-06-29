@@ -57,8 +57,8 @@ var base_port = config.base_port ? Number(config.base_port) :  8080;
 var instance_number = config.instance_number ? Number(config.instance_number) : 0;
 var schedule_matches_to_all = config.schedule_matches_to_all ? Boolean(config.schedule_matches_to_all) : false;
 var no_early_fail = config.no_early_fail ?  Boolean(config.no_early_fail) : false;
-var sgfnode_explore_minvalue = config.sgfnode_explore_minvalue ? Number(config.sgfnode_explore_minvalue) : 0;
-var sgfnode_explore_maxnums = config.sgfnode_explore_maxnums ? Number(config.sgfnode_explore_maxnums) : 3;
+var branching_coefficient = config.branching_coefficient ? Number(config.branching_coefficient) : 0.1;
+var branching_maxbranches = config.branching_maxbranches ? Number(config.branching_maxbranches) : 3;
 var mongodb_url = 'mongodb://localhost/sai'+instance_number;
 
 var cacheIP24hr = new Cacheman('IP24hr');
@@ -101,7 +101,7 @@ var SELFPLAY_EXPIRE_TIME = 30 * 60 * 1000; // selfplays expire after 30 minutes.
 
 function analyze_sgf_comments (comment) {
     [alpkt, beta, pi, avg_eval, avg_bonus] = comment.split(",").map(parseFloat);
-    return 0.25-avg_eval*(1-avg_eval);
+    return branching_coefficient*(0.25-avg_eval*(1-avg_eval));
 }
 
 function analyze_sgf(sgf) {
@@ -110,10 +110,24 @@ function analyze_sgf(sgf) {
     for (const pos in nodes) {
         if (pos == 0) continue;
         var value = analyze_sgf_comments(nodes[pos].C);
-        if (value > sgfnode_explore_minvalue) result.unshift({ move: Number(pos), priority: value });
+        result.unshift({ move: Number(pos), priority: value, rawvalues: nodes[pos].C });
     }
     result.sort( (a,b) => b.priority - a.priority );
-    return result.slice(0, sgfnode_explore_maxnums);
+    return result;
+}
+
+function generate_branches(sgf) {
+    var nodes = SGFParser.parse(sgf).gameTrees[0].nodes;
+    var result = [ ];
+    for (const pos in nodes) {
+        if (result.length >= branching_maxbranches) break;
+        if (pos == 0) continue;
+        var value = analyze_sgf_comments(nodes[pos].C);
+        if (Math.random() <= value) {
+            result.unshift({ move: Number(pos), priority: value });
+        }
+    }
+    return result;
 }
 
 function get_options_hash (options) {
@@ -991,6 +1005,34 @@ app.post('/submit', (req, res) => {
                         }
                     );
 
+                    var branches = generate_branches(sgffile);
+                    for (const branch of branches) {
+                        var set =  {
+                            priority: branch.priority,
+                            noise_value: default_noise_value,
+                            komi: default_komi,
+                            lambda: default_lambda,
+                            visits: default_visits,
+                            number_to_play: 1,
+                            game_count: 0,
+                            networkhash: networkhash,
+                            sgfhash: sgfhash,
+                            movescount: branch.move,
+                            ip: req.headers['x-real-ip'] || req.ip
+                        };
+
+                        db.collection("self_plays").insertOne(set,{},
+                            (err, dbres) => {
+                                if (err)
+                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " LZ game #" + counter + ": error adding branch");
+                                else
+                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " LZ game #" + counter + ": added branch at move " + branch.move);
+                            });
+
+                        set.requests = []
+                        pending_selfplays.unshift(set);
+                    }
+
                     if (req.body.selfplay_id) {
                         var selfplay_id = ObjectId(req.body.selfplay_id);
                         db.collection("self_plays").updateOne(
@@ -1608,7 +1650,6 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         console.log(`files: ${JSON.stringify(Object.keys(req.files || {}))}, body: ${JSON.stringify(req.body)}`);
         return res.status(400).send(msg+"\n");
     };
-
 
     if (req.body.sgfhash && req.body.networkhash)
         return logAndFail('Both parameters sgfhash and networkhash are provided');
