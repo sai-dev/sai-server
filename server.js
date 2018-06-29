@@ -40,6 +40,8 @@ const base_port = configsai.base_port ? Number(configsai.base_port) :  8080;
 const instance_number = configsai.instance_number ? Number(configsai.instance_number) : 0;
 const schedule_matches_to_all = configsai.schedule_matches_to_all ? Boolean(configsai.schedule_matches_to_all) : false;
 const no_early_fail = configsai.no_early_fail ?  Boolean(configsai.no_early_fail) : false;
+const branching_coefficient = configsai.branching_coefficient ? Number(configsai.branching_coefficient) : 0.1;
+const branching_maxbranches = configsai.branching_maxbranches ? Number(configsai.branching_maxbranches) : 3;
 
 const MONGODB_URL = "mongodb://localhost/sai"+instance_number;
 
@@ -156,7 +158,7 @@ const SELFPLAY_EXPIRE_TIME = 30 * 60 * 1000; // selfplays expire after 30 minute
 
 function analyze_sgf_comments (comment) {
     [alpkt, beta, pi, avg_eval, avg_bonus] = comment.split(",").map(parseFloat);
-    return 0.25-avg_eval*(1-avg_eval);
+    return  { priority: branching_coefficient*(0.25-avg_eval*(1-avg_eval)), komi: Math.round(alpkt) };
 }
 
 function analyze_sgf(sgf) {
@@ -165,9 +167,23 @@ function analyze_sgf(sgf) {
     for (const pos in nodes) {
         if (pos == 0) continue;
         const value = analyze_sgf_comments(nodes[pos].C);
-        result.unshift({ move: Number(pos), priority: value });
+        result.unshift({ move: Number(pos), rawvalues: nodes[pos].C, priority: value.priority, komi: value.komi });
     }
     result.sort( (a,b) => b.priority - a.priority );
+    return result;
+}
+
+function generate_branches(sgf) {
+    const nodes = SGFParser.parse(sgf).gameTrees[0].nodes;
+    const result = [ ];
+    for (const pos in nodes) {
+        if (result.length >= branching_maxbranches) break;
+        if (pos == 0) continue;
+        const value = analyze_sgf_comments(nodes[pos].C);
+        if (Math.random() <= value.priority) {
+            result.unshift({ move: Number(pos), priority: value.priority, komi: value.komi });
+        }
+    }
     return result;
 }
 
@@ -1107,6 +1123,51 @@ app.post("/submit", (req, res) => {
                             }
                         }
                     }
+
+                    get_best_network_hash().then( (hash) => {
+                        if (hash == networkhash) {
+                            // only create branches if the game corresponds to the current best network hash
+                            // to avoid long sequences of self-play with old networks.
+                            const branches = generate_branches(sgffile);
+                            if (branches.length > 0) {
+                                const selfplay_promise = req.body.selfplay_id ?
+                                    db.collection("self_plays").findOne({ _id: ObjectId(req.body.selfplay_id) }) :
+                                    Promise.resolve(null);
+                                selfplay_promise.then( (selfplay) => {
+                                    for (const branch of branches) {
+                                        const set =  {
+                                            priority: branch.priority,
+                                            komi: selfplay ? selfplay.komi +  branch.komi : default_komi + branch.komi,
+                                            noise_value: selfplay ? selfplay.noise_value : default_noise_value,
+                                            lambda: selfplay ? selfplay.lambda : default_lambda,
+                                            visits: selfplay ? selfplay.visits : default_visits,
+                                            resignation_percent: selfplay ? selfplay.resignation_percent : default_resignation_percent,
+                                            no_resignation_probability: selfplay ? selfplay.no_resignation_probability : default_no_resignation_probability,
+                                            number_to_play: 1,
+                                            game_count: 0,
+                                            networkhash: networkhash,
+                                            sgfhash: sgfhash,
+                                            movescount: branch.move,
+                                            ip: req.headers['x-real-ip'] || req.ip
+                                        };
+
+                                        db.collection("self_plays").insertOne(set,{},
+                                            (err, dbres) => {
+                                                if (err)
+                                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " LZ game #" + counter + ": error adding branch");
+                                                else
+                                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " LZ game #" + counter + ": added branch at move " + branch.move);
+                                            });
+
+                                        set.requests = []
+                                        pending_selfplays.unshift(set);
+                                    }
+                                }).catch( () =>  {
+                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " LZ game #" + counter + ": ERROR RETRIEVING SELFPLAY REQUEST");
+                                });
+                            }
+                        }
+                    });
                 }
             });
         }
