@@ -48,17 +48,17 @@ var auth_key = String(fs.readFileSync(__dirname + "/auth_key")).trim();
 set_task_verification_secret(String(fs.readFileSync(__dirname + "/task_secret")).trim());
 
 var config = ini.parse(fs.readFileSync(__dirname + "/config.ini", "utf-8"));
-var default_visits = Number(config.default_visits) || 3200;
-var default_randomcnt = Number(config.default_randomcnt) || 999;
-var default_komi = Number(config.default_komi) || 7.5;
-var default_noise_value = Number(config.default_noise_value) || 0.03;
-var default_lambda = Number(config.default_lambda) || 0.5;
-var base_port = Number(config.base_port) || 8080;
-var instance_number = Number(config.instance_number) || 0;
-var schedule_matches_to_all = Boolean(config.schedule_matches_to_all) || false;
-var no_early_fail = Boolean(config.no_early_fail) || false;
-var sgfnode_explore_minvalue = Number(config.sgfnode_explore_minvalue) || 0;
-var sgfnode_explore_maxnums = Number(config.sgfnode_explore_maxnums) || 3;
+var default_visits = config.default_visits ? Number(config.default_visits) : 3200;
+var default_randomcnt = config.default_randomcnt ? Number(config.default_randomcnt) : 999;
+var default_komi = config.default_komi ? Number(config.default_komi) : 7.5;
+var default_noise_value = config.default_noise_value ?  Number(config.default_noise_value) : 0.03;
+var default_lambda = config.default_lambda ? Number(config.default_lambda) : 0.5;
+var base_port = config.base_port ? Number(config.base_port) :  8080;
+var instance_number = config.instance_number ? Number(config.instance_number) : 0;
+var schedule_matches_to_all = config.schedule_matches_to_all ? Boolean(config.schedule_matches_to_all) : false;
+var no_early_fail = config.no_early_fail ?  Boolean(config.no_early_fail) : false;
+var sgfnode_explore_minvalue = config.sgfnode_explore_minvalue ? Number(config.sgfnode_explore_minvalue) : 0;
+var sgfnode_explore_maxnums = config.sgfnode_explore_maxnums ? Number(config.sgfnode_explore_maxnums) : 3;
 var mongodb_url = 'mongodb://localhost/sai'+instance_number;
 
 var cacheIP24hr = new Cacheman('IP24hr');
