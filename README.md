@@ -78,8 +78,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `no_resignation_probability`: probability resignation_percent is ignored and set to 0
 - `visits`: visits value in leelaz
 - `number_to_play`: number of self-plays to play
-- `game_count`: self-plays with this settings
-- `emabled`: 1 if enabled, 0 otherwise
+- `game_count`: self-plays actually played with these settings
 - `priority`: priority value
 
 ## games
@@ -93,6 +92,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `networkhash`: hash of the network used for this game
 - `options_hash`: small hash of the options used to play this game
 - `randomseed`: seed used to play this game
+- `selfplay_id`: reference in the self_plays table when this is a special selfplay
 - `sgf`: SGF of the games
 - `winnercolor`: color of the winner
 
