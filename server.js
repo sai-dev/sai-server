@@ -459,9 +459,17 @@ app.post('/request-match', (req, res) => {
         req.body.number_to_play = 400;
         //return res.status(400).send('No number_to_play specified.');
 
+    if (!req.body.komi)
+        req.body.komi = default_komi;
+
+    if (!req.body.lambda)
+        req.body.lambda = default_lambda;
+
     var options = { "resignation_percent": Number(req.body.resignation_percent),
         "randomcnt": Number(req.body.randomcnt),
-        "noise": String(req.body.noise) };
+        "noise": String(req.body.noise),
+        "komi": Number(req.body.komi),
+        "lambda": Number(req.body.lambda) };
 
     if (req.body.playouts) {
         options.playouts = Number(req.body.playouts);
