@@ -71,8 +71,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `lambda`: lambda value
 - `visits`: visits value in Leela Zero engine
 - `number_to_play`: number of self-plays to play
-- `game_count`: self-plays with this settings
-- `emabled`: 1 if enabled, 0 otherwise
+- `game_count`: self-plays actually played with these settings
 - `priority`: priority value
 
 ## games
