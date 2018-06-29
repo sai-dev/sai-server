@@ -150,6 +150,10 @@ let db;
 let pending_matches = [];
 const MATCH_EXPIRE_TIME = 30 * 60 * 1000; // matches expire after 30 minutes. After that the match will be lost and an extra request will be made.
 
+// Similar data for requested selfplays
+let pending_selfplays = [];
+const SELFPLAY_EXPIRE_TIME = 30 * 60 * 1000; // selfplays expire after 30 minutes. After that the selfplay will be lost and an extra request will be made.
+
 function analyze_sgf_comments (comment) {
     [alpkt, beta, pi, avg_eval, avg_bonus] = comment.split(",").map(parseFloat);
     return -alpkt;
@@ -279,6 +283,31 @@ async function get_pending_matches() {
     });
 }
 
+//  db.self_plays.aggregate( [ { "$redact": { "$cond": [ { "$gt": [ "$number_to_play", "$game_count" ] }, "$$KEEP", "$$PRUNE" ] } } ] )
+//
+async function get_pending_selfplays() {
+    pending_selfplays = [];
+
+    return new Promise( (resolve, reject) => {
+        db.collection("self_plays").aggregate( [
+            { "$redact": { "$cond":
+                [
+                    { "$gt": [ "$number_to_play", "$game_count" ] },
+                    "$$KEEP", "$$PRUNE"
+                ] } }
+        ] ).sort({_id:-1}).forEach( (selfplay) => {
+            selfplay.requests = []; // init request list.
+            pending_selfplays.unshift(selfplay);
+        }, (err) => {
+            if (err) {
+                console.error("Error fetching selfplays: " + err);
+                return reject(err);
+            }
+        });
+        resolve();
+    });
+};
+
 async function get_best_network_hash() {
     // Check if file has changed. If not, send cached version instead.
     //
@@ -363,6 +392,24 @@ setInterval(() => {
     }
 }, 1000 * 60 * 1);
 
+let last_selfplay_db_check = Date.now();
+
+setInterval( () => {
+    const now = Date.now();
+
+    // In case we have no selfplays scheduled, we check the db.
+    //
+    if (pending_selfplays.length === 0 && now > last_selfplay_db_check + 30 * 60 * 1000) {
+        console.log("No self-plays scheduled. Updating pending list.");
+
+        last_selfplay_db_check = now;
+
+        get_pending_selfplays()
+        .then()
+        .catch();
+    }
+}, 1000 * 60 * 1);
+
 MongoClient.connect(MONGODB_URL, (err, database) => {
     if (err) return console.log(err);
 
@@ -396,6 +443,10 @@ MongoClient.connect(MONGODB_URL, (err, database) => {
         .catch();
 
         get_pending_matches()
+        .then()
+        .catch();
+
+        get_pending_selfplays()
         .then()
         .catch();
 
@@ -992,7 +1043,8 @@ app.post("/submit", (req, res) => {
                         { $set: { ip: req.ip, networkhash, sgf: sgffile, options_hash: req.body.options_hash,
                                     movescount: (req.body.movescount ? Number(req.body.movescount) : null),
                                 data: trainingdatafile, clientversion: Number(clientversion),
-                                    winnercolor: req.body.winnercolor, random_seed: req.body.random_seed } },
+                                    winnercolor: req.body.winnercolor, random_seed: req.body.random_seed,
+                                selfplay_id: req.body.selfplay_id } },
                   { upsert: true },
                         err => {
                             // Need to catch this better perhaps? Although an error here really is totally unexpected/critical.
@@ -1033,38 +1085,28 @@ app.post("/submit", (req, res) => {
 
                     if (req.body.selfplay_id) {
                         const selfplay_id = ObjectId(req.body.selfplay_id);
-                        db.collection("self_plays").findOne(
+                        db.collection("self_plays").updateOne(
                             { _id: selfplay_id },
+                            { $inc: { game_count: 1 } },
+                            { },
                             (err, dbres) => {
-                                if (err) {
-                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " uploaded ELF game #" + elf_counter + ": " + sgfhash + " WRONG SELFPLAY ID " + selfplay_id + " : " + err);
-                                } else {
-                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " updating selfplay #" + selfplay_id);
-                                    if (dbres.game_count + 1 >=  dbres.number_to_play) {
-                                        db.collection("self_plays").updateOne(
-                                            { _id: selfplay_id },
-                                            { $inc: { game_count: 1 },  $set: { enabled: false } },
-                                            { },
-                                            (err, dbres) => {
-                                                if (err) console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " selfplay " + selfplay_id + " DISABLE ERROR: " + err);
-                                            }
-                                        );
-                                    } else {
-                                        db.collection("self_plays").updateOne(
-                                            { _id: selfplay_id },
-                                            { $inc: { game_count: 1 } },
-                                            { },
-                                            (err, dbres) => {
-                                                if (err) console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " selfplay " + selfplay_id + " INCREMENT ERROR: " + err);
-                                            }
-                                        )
-                                    }
-                                }
+                                if (err) console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " selfplay " + selfplay_id + " INCREMENT ERROR: " + err);
                             }
-                        )
+                        );
 
+                        const selfplay_index = pending_selfplays.findIndex(s => s._id == req.body.selfplay_id);
+                        if (selfplay_index != -1) {
+                            const selfplay = pending_selfplays[selfplay_index];
+                            const request_index = selfplay.requests.findIndex(e => e.seed === seed_from_mongolong(req.body.random_seed));
+                            if (request_index !== -1) {
+                                selfplay.requests.splice(request_index, 1);
+                            }
+                            selfplay.game_count++;
+                            if (selfplay.game_count >= selfplay.number_to_play) {
+                                pending_selfplays.splice(selfplay_index, 1);
+                            }
+                        }
                     }
-
                 }
             });
         }
@@ -1484,6 +1526,29 @@ app.get("/", asyncMiddleware(async(req, res) => {
 }));
 
 /**
+ * Determine which special selfplay should be scheduled.
+ *
+ * @param req {object} Express request
+ * @param now {int} Timestamp right now
+ * @returns {bool|object} False if no selfplay to schedule; otherwise, selfplay object
+ */
+function shouldScheduleSelfplay (req, now) {
+  if ( !(pending_selfplays.length && req.params.version!=0) )
+    return false;
+
+  let i = pending_selfplays.length;
+  while (--i >= 0) {
+    const selfplay = pending_selfplays[i];
+    const deleted = selfplay.requests.filter(e => e.timestamp < now - SELFPLAY_EXPIRE_TIME).length;
+    selfplay.requests.splice(0, deleted);
+    const requested = selfplay.requests.length;
+    if (selfplay.number_to_play > selfplay.game_count + requested)
+        return selfplay;
+  }
+  return false;
+}
+
+/**
  * Determine if a match should be scheduled for a given request.
  *
  * @param req {object} Express request
@@ -1599,8 +1664,7 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
         const options = { playouts: "0", visits: String(default_visits+1), resignation_percent: String(default_resignation_percent), noise: "true", randomcnt: String(default_randomcnt),
                           komi: String(default_komi), noise_value: String(default_noise_value), lambda: String(default_lambda) };
 
-        // check if there are special self-plays for the best-network
-        const self_play = await db.collection("self_plays").find({ networkhash: best_network_hash, enabled: true }).sort({'priority': -1}).limit(1).next();
+        const self_play = shouldScheduleSelfplay(req, now);
         if (self_play) {
             options.komi = String(self_play.komi);
             options.noise_value = String(self_play.noise_value);
@@ -1613,6 +1677,7 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
                 task.sgfhash = String(self_play.sgfhash);
                 task.movescount = String(self_play.movescount);
             }
+            self_play.requests.push({ timestamp: now, seed: random_seed });
             if (Math.random() < self_play.no_resignation_probability) options.resignation_percent = "0";
         } else {
             task.hash = best_network_hash;
@@ -1666,7 +1731,6 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         game_count: 0,
         ip: req.headers['x-real-ip'] || req.ip
     };
-    set.enabled = set.number_to_play > 0;
 
     if (req.body.sgfhash) {
         if (! req.body.movescount)
@@ -1687,6 +1751,8 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
     }
 
     await db.collection("self_plays").insertOne(set);
+    set.requests = [];
+    pending_selfplays.unshift(set);
 
     console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " uploaded self-play");
     res.send("Self-play request for game " + set.sgfhash + " network "  + set.networkhash + " stored in database.\n");
