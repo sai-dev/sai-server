@@ -1502,6 +1502,7 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
             options.komi = String(self_play.komi);
             options.noise_value = String(self_play.noise_value);
             options.lambda = String(self_play.lambda);
+            options.visits = String(self_play.visits);
             task.hash = String(self_play.networkhash);
             task.selfplay_id = String(self_play._id);
             if (self_play.sgfhash) {
@@ -1552,6 +1553,7 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         komi: req.body.komi ? parseFloat(req.body.komi) : default_komi,
         lambda: req.body.lambda ? parseFloat(req.body.lambda) : default_lambda,
         number_to_play: req.body.number_to_play ? parseInt(req.body.number_to_play) : 1,
+        visits: req.body.visits ? parseInt(req.body.visits) : default_visits,
         game_count: 0,
         ip: req.headers['x-real-ip'] || req.ip
     };

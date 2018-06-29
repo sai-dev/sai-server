@@ -69,6 +69,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `komi`: komi value to use for self play
 - `noise_value`: Dirichilet noise to use for self play
 - `lambda`: lambda value
+- `visits`: visits value in Leela Zero engine
 - `number_to_play`: number of self-plays to play
 - `game_count`: self-plays with this settings
 - `emabled`: 1 if enabled, 0 otherwise
