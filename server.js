@@ -101,7 +101,7 @@ var SELFPLAY_EXPIRE_TIME = 30 * 60 * 1000; // selfplays expire after 30 minutes.
 
 function analyze_sgf_comments (comment) {
     [alpkt, beta, pi, avg_eval, avg_bonus] = comment.split(",").map(parseFloat);
-    return branching_coefficient*(0.25-avg_eval*(1-avg_eval));
+    return  { priority: branching_coefficient*(0.25-avg_eval*(1-avg_eval)), komi: Math.round(alpkt) };
 }
 
 function analyze_sgf(sgf) {
@@ -110,7 +110,7 @@ function analyze_sgf(sgf) {
     for (const pos in nodes) {
         if (pos == 0) continue;
         var value = analyze_sgf_comments(nodes[pos].C);
-        result.unshift({ move: Number(pos), priority: value, rawvalues: nodes[pos].C });
+        result.unshift({ move: Number(pos), rawvalues: nodes[pos].C, priority: value.priority, komi: value.komi });
     }
     result.sort( (a,b) => b.priority - a.priority );
     return result;
@@ -123,8 +123,8 @@ function generate_branches(sgf) {
         if (result.length >= branching_maxbranches) break;
         if (pos == 0) continue;
         var value = analyze_sgf_comments(nodes[pos].C);
-        if (Math.random() <= value) {
-            result.unshift({ move: Number(pos), priority: value });
+        if (Math.random() <= value.priority) {
+            result.unshift({ move: Number(pos), priority: value.priority, komi: value.komi });
         }
     }
     return result;
@@ -1009,8 +1009,8 @@ app.post('/submit', (req, res) => {
                     for (const branch of branches) {
                         var set =  {
                             priority: branch.priority,
+                            komi: branch.komi,
                             noise_value: default_noise_value,
-                            komi: default_komi,
                             lambda: default_lambda,
                             visits: default_visits,
                             number_to_play: 1,
