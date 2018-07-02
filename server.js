@@ -53,6 +53,8 @@ var default_randomcnt = config.default_randomcnt ? Number(config.default_randomc
 var default_komi = config.default_komi ? Number(config.default_komi) : 7.5;
 var default_noise_value = config.default_noise_value ?  Number(config.default_noise_value) : 0.03;
 var default_lambda = config.default_lambda ? Number(config.default_lambda) : 0.5;
+var default_resignation_percent = config.default_resignation_percent ? Number(config.default_resignation_percent) : 5;
+var default_no_resignation_probability = config.default_no_resignation_probability ? Number(config.default_no_resignation_probability) : 0.2;
 var base_port = config.base_port ? Number(config.base_port) :  8080;
 var instance_number = config.instance_number ? Number(config.instance_number) : 0;
 var schedule_matches_to_all = config.schedule_matches_to_all ? Boolean(config.schedule_matches_to_all) : false;
@@ -507,7 +509,7 @@ app.post('/request-match', (req, res) => {
         //return res.status(400).send('No playouts specified.');
 
     if (!req.body.resignation_percent)
-        req.body.resignation_percent = 5;
+        req.body.resignation_percent = default_resignation_percent;
         //return res.status(400).send('No resignation_percent specified.');
 
     if (!req.body.noise)
@@ -1013,6 +1015,8 @@ app.post('/submit', (req, res) => {
                             noise_value: default_noise_value,
                             lambda: default_lambda,
                             visits: default_visits,
+                            resignation_percent: default_resignation_percent,
+                            no_resignation_probability: default_no_resignation_probability,
                             number_to_play: 1,
                             game_count: 0,
                             networkhash: networkhash,
@@ -1603,10 +1607,9 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
         // TODO In time we'll change this to a visits default instead of options default, for new --visits command
         //
         //var options = {"playouts": "1600", "resignation_percent": "10", "noise": "true", "randomcnt": "30"};
-        var options = {"playouts": "0", "visits": String(default_visits), "resignation_percent": "5", "noise": "true", "randomcnt": String(default_randomcnt),
-                       "komi": String(default_komi), "noise_value": String(default_noise_value), "lambda": String(default_lambda) };
-
-        if (Math.random() < .2) options.resignation_percent = "0";
+        var options = {"playouts": "0", "visits": String(default_visits), "resignation_percent": String(default_resignation_percent),
+                       "noise": "true", "randomcnt": String(default_randomcnt), "komi": String(default_komi), "noise_value": String(default_noise_value),
+                       "lambda": String(default_lambda) };
 
         var self_play = shouldScheduleSelfplay(req, now);
         if (self_play) {
@@ -1614,6 +1617,7 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
             options.noise_value = String(self_play.noise_value);
             options.lambda = String(self_play.lambda);
             options.visits = String(self_play.visits);
+            options.resignation_percent = String(self_play.resignation_percent);
             task.hash = String(self_play.networkhash);
             task.selfplay_id = String(self_play._id);
             if (self_play.sgfhash) {
@@ -1621,8 +1625,10 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
                 task.movescount = String(self_play.movescount);
             }
             self_play.requests.push({ timestamp: now, seed: random_seed });
+            if (Math.random() < self_play.no_resignation_probability) options.resignation_percent = "0";
         } else {
             task.hash = best_network_hash;
+            if (Math.random() < default_no_resignation_probability) options.resignation_percent = "0";
         }
 
         // For now, have autogtp 16 or newer play half of self-play with
@@ -1663,6 +1669,8 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         lambda: req.body.lambda ? parseFloat(req.body.lambda) : default_lambda,
         number_to_play: req.body.number_to_play ? parseInt(req.body.number_to_play) : 1,
         visits: req.body.visits ? parseInt(req.body.visits) : default_visits,
+        resignation_percent: req.body.resignation_percent ? parseFloat(req.body.resignation_percent) : default_resignation_percent,
+        no_resignation_probability: req.body.no_resignation_probability ? parseFloat(req.body.no_resignation_probability) : default_no_resignation_probability,
         game_count: 0,
         ip: req.headers['x-real-ip'] || req.ip
     };
