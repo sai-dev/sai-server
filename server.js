@@ -1036,7 +1036,7 @@ app.post('/submit', (req, res) => {
                     for (const branch of branches) {
                         var set =  {
                             priority: branch.priority,
-                            komi: branch.komi,
+                            komi: selfplay ? selfplay.komi +  branch.komi : default_komi + branch.komi,
                             noise_value: selfplay ? selfplay.noise_value : default_noise_value,
                             lambda: selfplay ? selfplay.lambda : default_lambda,
                             visits: selfplay ? selfplay.visits : default_visits,
