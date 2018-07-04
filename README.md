@@ -70,6 +70,8 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `noise_value`: Dirichilet noise to use for self play
 - `lambda`: lambda value
 - `visits`: visits value in Leela Zero engine
+- `resignation_percent`: probability of resignation
+- `no_resignation_probability`: probability resignation_percent is ignored and set to 0
 - `number_to_play`: number of self-plays to play
 - `game_count`: self-plays actually played with these settings
 - `priority`: priority value
@@ -83,7 +85,9 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `ip`: IP address who submitted the game
 - `movescount`: number of moves in the SGF
 - `networkhash`: hash of the network used for this game
+- `options_hash`: small hash of the options used to play this game
 - `randomseed`: seed used to play this game
+- `selfplay_id`: reference in the self_plays table when this is a special selfplay
 - `sgf`: SGF of the games
 - `winnercolor`: color of the winner
 
@@ -149,7 +153,7 @@ This is a very brief documentation of the web API of the server.
   - `key`: password for the privileged API
 - `/submit`: submit the result of a self-play. The game is added to the `games` collection, and the counter of `self-plays` for the related network is increased.  It is used by `autogtp` when a self-play is terminated.
   - `sgf`: a file with the gzipped SGF of the self-play
-  - `trainingdata`: ???
+  - `trainingdata`: the training data to be recorded for generating chunks
   - `clientversion`: version of the client AutoGTP
   - `networkhash`: hash of the  network
   - `winnercolor`: color of the winner network
