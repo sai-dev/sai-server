@@ -834,18 +834,10 @@ app.post('/submit-match', asyncMiddleware(async (req, res, next) => {
     if (pending_match_index >= 0) {
         var m = pending_matches[pending_match_index];
 
-        if (sprt_result === false) {
-            // remove from pending matches
-            if  (no_early_fail) {
-                console.log("SPRT: Early fail unshift: " + JSON.stringify(m));
-                pending_matches.splice(pending_match_index, 1);  // cut out the match
-                if (m.game_count < m.number_to_play) pending_matches.unshift(m);   // continue a SPRT pass at end of queue
-                console.log("SPRT: Early fail post-unshift: " + JSON.stringify(pending_matches));
-            } else {
-                console.log("SPRT: Early fail pop: " + JSON.stringify(m));
-                pending_matches.splice(pending_match_index, 1)
-                console.log("SPRT: Early fail post-pop: " + JSON.stringify(pending_matches));
-            }
+        if (sprt_result === false && ! no_early_fail) {
+            console.log("SPRT: Early fail pop: " + JSON.stringify(m));
+            pending_matches.splice(pending_match_index, 1)
+            console.log("SPRT: Early fail post-pop: " + JSON.stringify(pending_matches));
         } else {
             // remove the match from the requests array.
             var index = m.requests.findIndex(e => e.seed === seed_from_mongolong(req.body.random_seed));
@@ -863,7 +855,7 @@ app.post('/submit-match', asyncMiddleware(async (req, res, next) => {
 
             // Check > 1 since we'll run to 400 even on a SPRT pass, but will do it at end.
             //
-            if (sprt_result === true && pending_matches.length > 1) {
+            if ( (sprt_result === true || sprt_result === false) && pending_matches.length > 1) {
                 console.log("SPRT: Early pass unshift: " + JSON.stringify(m));
                 pending_matches.splice(pending_match_index, 1);  // cut out the match
                 if (m.game_count < m.number_to_play) pending_matches.unshift(m);   // continue a SPRT pass at end of queue
