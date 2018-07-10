@@ -1032,36 +1032,42 @@ app.post('/submit', (req, res) => {
                         }
                     }
 
-                    var branches = generate_branches(sgffile);
-                    for (const branch of branches) {
-                        var set =  {
-                            priority: branch.priority,
-                            komi: selfplay ? selfplay.komi +  branch.komi : default_komi + branch.komi,
-                            noise_value: selfplay ? selfplay.noise_value : default_noise_value,
-                            lambda: selfplay ? selfplay.lambda : default_lambda,
-                            visits: selfplay ? selfplay.visits : default_visits,
-                            resignation_percent: selfplay ? selfplay.resignation_percent : default_resignation_percent,
-                            no_resignation_probability: selfplay ? selfplay.no_resignation_probability : default_no_resignation_probability,
-                            number_to_play: 1,
-                            game_count: 0,
-                            networkhash: networkhash,
-                            sgfhash: sgfhash,
-                            movescount: branch.move,
-                            ip: req.headers['x-real-ip'] || req.ip
-                        };
-                        console.log(set);
+                    get_best_network_hash().then( (hash) => {
+                        if (hash == networkhash) {
+                            // only create branches if the game corresponds to the current best network hash
+                            // to avoid long sequences of self-play with old networks.
+                            var branches = generate_branches(sgffile);
+                            for (const branch of branches) {
+                                var set =  {
+                                    priority: branch.priority,
+                                    komi: selfplay ? selfplay.komi +  branch.komi : default_komi + branch.komi,
+                                    noise_value: selfplay ? selfplay.noise_value : default_noise_value,
+                                    lambda: selfplay ? selfplay.lambda : default_lambda,
+                                    visits: selfplay ? selfplay.visits : default_visits,
+                                    resignation_percent: selfplay ? selfplay.resignation_percent : default_resignation_percent,
+                                    no_resignation_probability: selfplay ? selfplay.no_resignation_probability : default_no_resignation_probability,
+                                    number_to_play: 1,
+                                    game_count: 0,
+                                    networkhash: networkhash,
+                                    sgfhash: sgfhash,
+                                    movescount: branch.move,
+                                    ip: req.headers['x-real-ip'] || req.ip
+                                };
+                                console.log(set);
 
-                        db.collection("self_plays").insertOne(set,{},
-                            (err, dbres) => {
-                                if (err)
-                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " LZ game #" + counter + ": error adding branch");
-                                else
-                                    console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " LZ game #" + counter + ": added branch at move " + branch.move);
-                            });
+                                db.collection("self_plays").insertOne(set,{},
+                                    (err, dbres) => {
+                                        if (err)
+                                            console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " LZ game #" + counter + ": error adding branch");
+                                        else
+                                            console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " LZ game #" + counter + ": added branch at move " + branch.move);
+                                    });
 
-                        set.requests = []
-                        pending_selfplays.unshift(set);
-                    }
+                                set.requests = []
+                                pending_selfplays.unshift(set);
+                            }
+                        }
+                    });
                 }
             });
         }
