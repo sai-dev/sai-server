@@ -1407,8 +1407,7 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
         var styles = match_and_styles[0];
         var match_table = match_and_styles[1];
 
-        var page = "<html><head>\n<title>Leela Zero</title>\n";
-        page += `<link rel="alternate" type="application/rss+xml" title="Leela Zero Best Networks" href="http://zero.sjeng.org/rss" />`
+        var page = "<html><head>\n<title>Leela Zero / SAI</title>\n";
         page += "<script type=\"text/javascript\" src=\"/static/timeago.js\"></script>\n";
         page += "<style>";
         page += "table.networks-table { float: left; margin-right: 40px; margin-bottom: 20px; }\n";
@@ -1438,7 +1437,7 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
             page += "Self-play games are played with some randomness and noise for all moves.<br>";
         page += "Training data from self-play games are full strength even if plays appear weak.<br>";
         page += "<br>";
-        page += "2018-05-04 Leela Zero 0.14 + AutoGTP v16.<br>";
+        page += "SAI is derived from Leela Zero 0.14 + AutoGTP v16.<br>";
         page += "<br>";
 
         responses.map( response => page += response );
