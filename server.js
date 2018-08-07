@@ -879,8 +879,8 @@ app.post('/submit-match', asyncMiddleware(async (req, res, next) => {
         // SPRT passed OR it has reach 55% after 400 games (stick to the magic number)
         && (
             sprt_result === true
-		// || (match.game_count >= 400 && match.network1_wins / match.game_count >= 0.55)
-		|| (match.game_count >= 100 && match.network1_wins >= match.game_count/2 + Math.sqrt(match.game_count))
+            // || (match.game_count >= 400 && match.network1_wins / match.game_count >= 0.55)
+            || (match.game_count >= 100 && match.network1_wins >= match.game_count/2 + Math.sqrt(match.game_count))
         )) {
 
         fs.copyFileSync(__dirname + '/network/' + req.body.winnerhash + '.gz', __dirname + '/network/best-network.gz');
