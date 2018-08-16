@@ -55,6 +55,8 @@ var default_noise_value = config.default_noise_value ?  Number(config.default_no
 var default_lambda = config.default_lambda ? Number(config.default_lambda) : 0.5;
 var default_resignation_percent = config.default_resignation_percent ? Number(config.default_resignation_percent) : 5;
 var default_no_resignation_probability = config.default_no_resignation_probability ? Number(config.default_no_resignation_probability) : 0.2;
+var default_other_options_selfplay = config.default_other_options_selfplay ? String(config.default_other_options_selfplay): "";
+var default_other_options_match = config.default_other_options_match ? String(config.default_other_options_match): "";
 var base_port = config.base_port ? Number(config.base_port) :  8080;
 var instance_number = config.instance_number ? Number(config.instance_number) : 0;
 var schedule_matches_to_all = config.schedule_matches_to_all ? Boolean(config.schedule_matches_to_all) : false;
@@ -134,9 +136,9 @@ function generate_branches(sgf) {
 
 function get_options_hash (options) {
     if (options.visits) {
-        return checksum("" + options.visits + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value).slice(0,6);
+        return checksum("" + options.visits + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value + options.other_options).slice(0,6);
     } else {
-        return checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value).slice(0,6);
+        return checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value + options.other_options).slice(0,6);
     }
 };
 
@@ -530,11 +532,15 @@ app.post('/request-match', (req, res) => {
     if (!req.body.lambda)
         req.body.lambda = default_lambda;
 
+    if (! ('other_options' in req.body))
+        req.body.other_options = default_other_options_match;
+
     var options = { "resignation_percent": Number(req.body.resignation_percent),
         "randomcnt": Number(req.body.randomcnt),
         "noise": String(req.body.noise),
         "komi": Number(req.body.komi),
-        "lambda": Number(req.body.lambda) };
+        "lambda": Number(req.body.lambda),
+        "other_options": String(req.body.other_options)};
 
     if (req.body.playouts) {
         options.playouts = Number(req.body.playouts);
@@ -1039,6 +1045,7 @@ app.post('/submit', (req, res) => {
                                     visits: selfplay ? selfplay.visits : default_visits,
                                     resignation_percent: selfplay ? selfplay.resignation_percent : default_resignation_percent,
                                     no_resignation_probability: selfplay ? selfplay.no_resignation_probability : default_no_resignation_probability,
+                                    other_options: selfplay ? selfplay.other_options : default_other_options_selfplay,
                                     number_to_play: 1,
                                     game_count: 0,
                                     networkhash: networkhash,
@@ -1608,7 +1615,7 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
         //var options = {"playouts": "1600", "resignation_percent": "10", "noise": "true", "randomcnt": "30"};
         var options = {"playouts": "0", "visits": String(default_visits), "resignation_percent": String(default_resignation_percent),
                        "noise": "true", "randomcnt": String(default_randomcnt), "komi": String(default_komi), "noise_value": String(default_noise_value),
-                       "lambda": String(default_lambda) };
+                       "lambda": String(default_lambda), "other_options": String(default_other_options_selfplay) };
 
         var self_play = shouldScheduleSelfplay(req, now);
         if (self_play) {
@@ -1617,6 +1624,7 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
             options.lambda = String(self_play.lambda);
             options.visits = String(self_play.visits);
             options.resignation_percent = String(self_play.resignation_percent);
+            options.other_options = String(self_play.other_options);
             task.hash = String(self_play.networkhash);
             task.selfplay_id = String(self_play._id);
             if (self_play.sgfhash) {
@@ -1666,6 +1674,7 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         noise_value: req.body.noise_value  ? parseFloat(req.body.noise_value) : default_noise_value,
         komi: req.body.komi ? parseFloat(req.body.komi) : default_komi,
         lambda: req.body.lambda ? parseFloat(req.body.lambda) : default_lambda,
+        other_options: 'other_options' in req.body ? String(req.body.other_options) : default_other_options_selfplay,
         number_to_play: req.body.number_to_play ? parseInt(req.body.number_to_play) : 1,
         visits: req.body.visits ? parseInt(req.body.visits) : default_visits,
         resignation_percent: req.body.resignation_percent ? parseFloat(req.body.resignation_percent) : default_resignation_percent,
