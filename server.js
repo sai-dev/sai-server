@@ -105,7 +105,8 @@ var SELFPLAY_EXPIRE_TIME = 30 * 60 * 1000; // selfplays expire after 30 minutes.
 
 function analyze_sgf_comments (comment) {
     [alpkt, beta, pi, avg_eval, avg_bonus] = comment.split(",").map(parseFloat);
-    return  { priority: branching_coefficient*(0.25-avg_eval*(1-avg_eval)), komi: Math.round(alpkt) };
+//    return  { priority: branching_coefficient*(0.25-avg_eval*(1-avg_eval)), komi: Math.round(alpkt) };
+    return  { priority: branching_coefficient*0.25, komi: Math.round(alpkt) };
 }
 
 function analyze_sgf(sgf) {
