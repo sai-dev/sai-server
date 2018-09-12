@@ -1,4 +1,4 @@
-# leela-zero-server
+# sai-server
 ## Dev Environment Setup
 ### Requirements
 - Node.js (https://nodejs.org/en/download/)
@@ -71,7 +71,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `komi`: komi value to use for self play
 - `noise_value`: Dirichilet noise to use for self play
 - `lambda`: lambda value
-- `visits`: visits value in Leela Zero engine
+- `visits`: visits value in Leela Zero/SAI engine
 - `resignation_percent`: probability of resignation
 - `no_resignation_probability`: probability resignation_percent is ignored and set to 0
 - `number_to_play`: number of self-plays to play
@@ -82,7 +82,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 
 - `_id`: internal identifier
 - `sgfhash`: hash value of the sgf
-- `clientversion`: version of leelaz who played this game
+- `clientversion`: version of leelaz/sai who played this game
 - `data`: training data
 - `ip`: IP address who submitted the game
 - `movescount`: number of moves in the SGF
@@ -102,14 +102,14 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `network1_wins`: number of times the first network has won a game
 - `game_count`: number of playes games
 - `number_to_play`: number of games to play
-- `options`: a dictionary with options for leela-zero ( `resignation_percent`, `randomcnt`, `noise`, `playouts` , `visits`, `komi`, `lambda` )
+- `options`: a dictionary with options for leelaz/sai ( `resignation_percent`, `randomcnt`, `noise`, `playouts` , `visits`, `komi`, `lambda` )
 - `options_hash`: hash of the `options` dictionary
 
 ## match_games
 
 - `_id`: internal identifier
 - `sgfhash`: hash value of the sgf
-- `clientversion`: version of leelaz who played this game
+- `clientversion`: version of leelaz/sai who played this game
 - `data`: training data
 - `ip`: IP address who submitted the game
 - `loserhash`: hash of the loser network
