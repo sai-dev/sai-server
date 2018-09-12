@@ -45,6 +45,7 @@ const {
 const ELF_NETWORK = "62b5417b64c46976795d10a6741801f15f857e5029681a42d02c9852097df4b9";
 
 var auth_key = String(fs.readFileSync(__dirname + "/auth_key")).trim();
+var public_auth_key = String(fs.readFileSync(__dirname + "/public_auth_key")).trim();
 set_task_verification_secret(String(fs.readFileSync(__dirname + "/task_secret")).trim());
 
 var config = ini.parse(fs.readFileSync(__dirname + "/config.ini", "utf-8"));
@@ -730,6 +731,12 @@ app.post('/submit-match', asyncMiddleware(async (req, res, next) => {
         return res.status(400).send(msg);
     };
 
+    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+
+        return res.status(400).send('Incorrect key provided.');
+    }
+
     if (!req.files)
         return logAndFail('No files were uploaded.');
 
@@ -906,6 +913,12 @@ app.post('/submit', (req, res) => {
         console.log(`files: ${JSON.stringify(Object.keys(req.files || {}))}, body: ${JSON.stringify(req.body)}`);
         return res.status(400).send(msg);
     };
+
+    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+
+        return res.status(400).send('Incorrect key provided.');
+    }
 
     if (!req.files)
         return logAndFail('No files were uploaded.');
@@ -1664,6 +1677,12 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         console.log(`files: ${JSON.stringify(Object.keys(req.files || {}))}, body: ${JSON.stringify(req.body)}`);
         return res.status(400).send(msg+"\n");
     };
+
+    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+
+        return res.status(400).send('Incorrect key provided.');
+    }
 
     if (req.body.sgfhash && req.body.networkhash)
         return logAndFail('Both parameters sgfhash and networkhash are provided');
