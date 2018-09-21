@@ -415,6 +415,22 @@ app.use('/best-network-hash', asyncMiddleware( async (req, res, next) => {
     res.end();
 }));
 
+// Server will promote a network.
+//
+app.use('/promote',asyncMiddleware( async (req, res, next) => {
+    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+
+        return res.status(400).send('Incorrect key provided.');
+    };
+    if (!req.body.hash)
+        return res.status(400).send('Network hash not provided.');
+    fs.copyFileSync(__dirname + '/network/' + req.body.hash + '.gz', __dirname + '/network/best-network.gz');
+    await get_pending_selfplays();
+    res.send("Network has been promoted");
+}));
+
+
 // Server will copy a new best-network to the proper location if validation testing of an uploaded network shows
 // it is stronger than the prior network. So we don't need to worry about locking the file/etc when uploading to
 // avoid an accidential download of a partial upload.

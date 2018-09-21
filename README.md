@@ -126,6 +126,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 This is a very brief documentation of the web API of the server.
 - `/best-network-hask`: returns two rows: the first one is the hash of the network in `network/best-network.gz`, the second one contains the number `11` (why?).
 - `/best-network`: returns the best network with filename `best-network.gz`. The file is actually retrieved by the network directory, using as a name the hash of the best network with an added `.gz` extension. This was used by `autogtp` in the past, but now `autogtp` directly downloads the network from the `network` directory (which, in production, is served by `nginx`).
+- `/promote`: promote the network specified in the `hash` paramter as best network.
 - `/request-match`: submit the request of a match between networks. The request is added to the `matches` collection of the MongoDB database. When `/get-task` is called, self-play tasks and match tasks are interleaved. It is a privileged API. Parameters `playouts` and `visits` cannot be used togther. If they are both omitted, a default of 3200 visits is used.
   - `network1`: hash of the first network
   - `network2`: (optional) hash of the second network. If it is not provided, the current best network is used.
