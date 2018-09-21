@@ -1678,8 +1678,8 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         return res.status(400).send(msg+"\n");
     };
 
-    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
-        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+    if (!req.body.key || req.body.key != auth_key) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(auth_key) + "'");
 
         return res.status(400).send('Incorrect key provided.');
     }
