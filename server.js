@@ -306,13 +306,17 @@ async function get_pending_matches() {
 //  db.self_plays.aggregate( [ { "$redact": { "$cond": [ { "$gt": [ "$number_to_play", "$game_count" ] }, "$$KEEP", "$$PRUNE" ] } } ] )
 //
 async function get_pending_selfplays() {
+    const best_network_hash = await get_best_network_hash();
     pending_selfplays = [];
 
     return new Promise( (resolve, reject) => {
         db.collection("self_plays").aggregate( [
             { "$redact": { "$cond":
                 [
-                    { "$gt": [ "$number_to_play", "$game_count" ] },
+                    { "$and" : [
+                        { "$gt": [ "$number_to_play", "$game_count" ] },
+                        { "$eq": [ "$networkhash", best_network_hash ]}
+                    ]},
                     "$$KEEP", "$$PRUNE"
                 ] } }
         ] ).sort({_id:-1}).forEach( (selfplay) => {
@@ -1797,6 +1801,8 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         return res.status(400).send(msg+"\n");
     };
 
+    var best_network_hash = await get_best_network_hash()
+
     if (!req.body.key || req.body.key != auth_key) {
         console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(auth_key) + "'");
 
@@ -1837,12 +1843,14 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
             return logAndFail("No network was found with hash " + req.body.networkhash);
         set.networkhash = req.body.networkhash;
     } else {
-        set.networkhash = await get_best_network_hash();
+        set.networkhash = best_network_hash;
     }
 
     await db.collection("self_plays").insertOne(set);
-    set.requests = [];
-    pending_selfplays.unshift(set);
+    if ( set.networkhash == best_network_hash ) {
+        set.requests = [];
+        pending_selfplays.unshift(set);
+    }
 
     console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " uploaded self-play");
     res.send("Self-play request for game " + set.sgfhash + " network "  + set.networkhash + " stored in database.\n");
