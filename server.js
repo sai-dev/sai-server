@@ -329,7 +329,7 @@ setInterval( () => {
     // In case we have no selfplays scheduled, we check the db.
     //
     if (pending_selfplays.length === 0 && now > last_selfplay_db_check + 30 * 60 * 1000) {
-        console.log("No matches scheduled. Updating pending list.");
+        console.log("No self-plays scheduled. Updating pending list.");
 
         last_selfplay_db_check = now;
 
