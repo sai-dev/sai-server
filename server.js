@@ -468,7 +468,7 @@ app.post('/best-network-chunks', asyncMiddleware( async (req, res, next) => {
     var chunk_count = 0;
     var total_game_count = 0;
     var chunk = "";
-    var hash = await get_best_network_hash();
+    var hash = req.body.hash || await get_best_network_hash();
 
     function write_chunk() {
         var filename = "train_" + hash.substring(0,8) + "_" + chunk_count + ".gz";
