@@ -848,10 +848,11 @@ app.post('/submit-match', asyncMiddleware(async (req, res, next) => {
 
     // prepare $inc
     var $inc = { game_count: 1 };
-    if (match.network1 == req.body.winnerhash)
-        $inc.network1_wins = 1;
-    else
-        $inc.network1_losses = 1;
+    if (req.body.winnercolor != "jigo")
+        if (match.network1 == req.body.winnerhash)
+            $inc.network1_wins = 1;
+        else
+            $inc.network1_losses = 1;
 
     // save to database using $inc and get modified document
     match = (await db.collection("matches").findOneAndUpdate(
@@ -1327,7 +1328,7 @@ app.get('/',  asyncMiddleware( async (req, res, next) => {
             return "";
         }),
         db.collection("match_games").find(
-            { winnerhash: best_network_hash },
+            { winnerhash: best_network_hash, winnercolor: { $ne: "jigo" }  },
             { _id: 0, winnerhash: 1, loserhash: 1, sgfhash: 1 }
         ).sort( { _id: -1 } ).limit(1).toArray()
         .then((game) => {
