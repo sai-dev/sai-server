@@ -944,7 +944,7 @@ app.post("/submit-match", asyncMiddleware(async(req, res) => {
 
     // prepare $inc
     const $inc = { game_count: 1 };
-    const is_network1_win = (match.network1 == req.body.winnerhash);
+    const is_network1_win = (match.network1 == req.body.winnerhash) && req.body.winnercolor != "jigo";
     if (is_network1_win)
         $inc.network1_wins = 1;
     else
@@ -1453,7 +1453,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         db.collection("games").find({ ip: req.ip }, selfplayProjection).hint("ip_-1__id_-1").sort({ _id: -1 }).limit(10).toArray()
         .then(saveSelfplay("ip")),
         db.collection("match_games").find(
-            { winnerhash: best_network_hash },
+            { winnerhash: best_network_hash, winnercolor: { $ne: "jigo" }  },
             { _id: 0, winnerhash: 1, loserhash: 1, sgfhash: 1 }
         ).sort({ _id: -1 }).limit(1).toArray()
         .then(game => {
