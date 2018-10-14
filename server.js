@@ -38,6 +38,7 @@ const default_noise_value = configsai.default_noise_value ?  Number(configsai.de
 const default_lambda = configsai.default_lambda ? Number(configsai.default_lambda) : 0.5;
 const default_other_options_selfplay = configsai.default_other_options_selfplay ? String(configsai.default_other_options_selfplay): "";
 const default_other_options_match = configsai.default_other_options_match ? String(configsai.default_other_options_match): "";
+const disable_default_selfplay = Boolean(configsai.disable_default_selfplay);
 const base_port = configsai.base_port ? Number(configsai.base_port) :  8080;
 const instance_number = configsai.instance_number ? Number(configsai.instance_number) : 0;
 const schedule_matches_to_all = configsai.schedule_matches_to_all ? Boolean(configsai.schedule_matches_to_all) : false;
@@ -1759,14 +1760,17 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
 //
 //        console.log(req.ip + " (" + req.headers['x-real-ip'] + ") " + " got task: wait");
     } else {
+        const self_play = shouldScheduleSelfplay(req, now);
+
         // {"cmd": "selfplay", "hash": "xxx", "playouts": 1000, "resignation_percent": 3.0}
-        const task = { cmd: "selfplay", hash: "", required_client_version, minimum_autogtp_version: required_client_version, random_seed, minimum_leelaz_version: required_leelaz_version };
+        const task = (!self_play && disable_default_selfplay) ?
+            { "cmd": "wait", "minutes": "5" }:
+            { cmd: "selfplay", hash: "", required_client_version, minimum_autogtp_version: required_client_version, random_seed, minimum_leelaz_version: required_leelaz_version };
 
         //var options = {"playouts": "1600", "resignation_percent": "10", "noise": "true", "randomcnt": "30"};
         const options = { playouts: "0", visits: String(default_visits+1), resignation_percent: String(default_resignation_percent), noise: "true", randomcnt: String(default_randomcnt),
                           komi: String(default_komi), noise_value: String(default_noise_value), lambda: String(default_lambda), other_options: String(default_other_options_selfplay) };
 
-        const self_play = shouldScheduleSelfplay(req, now);
         if (self_play) {
             options.komi = String(self_play.komi);
             options.noise_value = String(self_play.noise_value);
@@ -1782,7 +1786,7 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
             }
             self_play.requests.push({ timestamp: now, seed: random_seed });
             if (Math.random() < self_play.no_resignation_probability) options.resignation_percent = "0";
-        } else {
+        } else if (! disable_default_selfplay) {
             task.hash = best_network_hash;
             if (Math.random() < default_no_resignation_probability) options.resignation_percent = "0";
         }
@@ -1795,8 +1799,10 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
         //}
 
         //task.options_hash = checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt).slice(0,6);
-        task.options_hash = get_options_hash(options);
-        task.options = options;
+        if (task.cmd != 'wait') {
+            task.options_hash = get_options_hash(options);
+            task.options = options;
+        }
         await add_gzip_hash(task);
         res.send(JSON.stringify(task));
 
