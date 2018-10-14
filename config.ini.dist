@@ -8,6 +8,7 @@ default_resignation_percent = 5
 default_no_resignation_probability = 0.2
 default_other_options_selfplay = ""
 default_other_options_match = ""
+disable_default_selfplay = false
 base_port = 8080
 instance_number = 0
 ; if false, matches are only scheduled to fast clients

@@ -58,6 +58,7 @@ var default_resignation_percent = config.default_resignation_percent ? Number(co
 var default_no_resignation_probability = config.default_no_resignation_probability ? Number(config.default_no_resignation_probability) : 0.2;
 var default_other_options_selfplay = config.default_other_options_selfplay ? String(config.default_other_options_selfplay): "";
 var default_other_options_match = config.default_other_options_match ? String(config.default_other_options_match): "";
+var disable_default_selfplay = Boolean(config.disable_default_selfplay);
 var base_port = config.base_port ? Number(config.base_port) :  8080;
 var instance_number = config.instance_number ? Number(config.instance_number) : 0;
 var schedule_matches_to_all = config.schedule_matches_to_all ? Boolean(config.schedule_matches_to_all) : false;
@@ -1668,9 +1669,11 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
             }
             self_play.requests.push({ timestamp: now, seed: random_seed });
             if (Math.random() < self_play.no_resignation_probability) options.resignation_percent = "0";
-        } else {
+        } else if (! disable_default_selfplay) {
             task.hash = best_network_hash;
             if (Math.random() < default_no_resignation_probability) options.resignation_percent = "0";
+        } else {
+            task = { "cmd": "wait", "minutes": "5" };
         }
 
         // For now, have autogtp 16 or newer play half of self-play with
@@ -1683,9 +1686,10 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
         */
 
         //task.options_hash = checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt).slice(0,6);
-        task.options_hash = get_options_hash(options);
-        task.options = options;
-
+        if (task.cmd != 'wait') {
+            task.options_hash = get_options_hash(options);
+            task.options = options;
+        }
         res.send(JSON.stringify(task));
 
         console.log(`${req.ip} (${req.headers['x-real-ip']}) got task: selfplay ${JSON.stringify(task)}`);
