@@ -1661,6 +1661,7 @@ app.get('/get-task/:version(\\d+)', asyncMiddleware( async (req, res, next) => {
             options.visits = String(self_play.visits);
             options.resignation_percent = String(self_play.resignation_percent);
             options.other_options = String(self_play.other_options);
+            if (self_play.noise) options.noise = String(self_play.noise);
             task.hash = String(self_play.networkhash);
             task.selfplay_id = String(self_play._id);
             if (self_play.sgfhash) {
@@ -1719,6 +1720,7 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
     var set =  {
         priority: parseFloat(req.body.priority),
         noise_value: req.body.noise_value  ? parseFloat(req.body.noise_value) : default_noise_value,
+        noise: req.body.noise ? req.body.noise.toLowerCase() == "true" : "true",
         komi: req.body.komi ? parseFloat(req.body.komi) : default_komi,
         lambda: req.body.lambda ? parseFloat(req.body.lambda) : default_lambda,
         other_options: 'other_options' in req.body ? String(req.body.other_options) : default_other_options_selfplay,
