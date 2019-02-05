@@ -2116,6 +2116,7 @@ app.get("/data/elograph.json", asyncMiddleware(async(req, res) => {
     res.json(json);
 }));
 
+/*
 app.get("/opening/:start(\\w+)?", asyncMiddleware(async(req, res) => {
     let start = req.params.start;
     const files = {
@@ -2131,6 +2132,7 @@ app.get("/opening/:start(\\w+)?", asyncMiddleware(async(req, res) => {
 
     return res.render("opening", { top10, start, menu: "opening" });
 }));
+*/
 
 app.get("/admin/access-logs", asyncMiddleware(async(req, res) => {
     const url = req.query.url;
