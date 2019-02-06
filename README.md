@@ -28,6 +28,7 @@ Your project folder should look like this
   - static/
   - views/
   - auth_key                   (dummy file)
+  - public_auth_key            (dummy file)
   - task_secret                (dummy file)
   - ...                        (and other project files)
   - server.js
@@ -45,6 +46,7 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - run `npm install`
 - make a `network` directory and copy the best network file, whose name should be `best-network.gz`
 - make an `auth_key` file, containing the password which will be requested by the server for privileged operations
+- make a `public_auth_key` file, containing the password which will be requested by the server for unprivileged write operations (if empty, no password is required)
 - make a `task_secret` file, contaning the secret which will be used to sign option hashes for matches
 - run `mongodb < mongodb.indexes`
 - start the server with `npm start`
