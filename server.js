@@ -24,6 +24,8 @@ const mongoMorgan = require("mongo-morgan");
 const Raven = require("raven");
 const config = require("./config");
 
+const archiver = require('archiver');
+
 const default_visits = 1600;
 const default_randomcnt = 30;
 const default_resignation_percent = 5;
@@ -425,7 +427,51 @@ app.use("/best-network", asyncMiddleware(async(req, res) => {
     console.log(req.ip + " (" + req.headers["x-real-ip"] + ") " + " downloaded /best-network");
 }));
 
-app.post("/request-match", (req, res) => {
+app.post('/best-network-chunks', asyncMiddleware( async (req, res, next) => {
+    if (!req.body.key || req.body.key != auth_key) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(auth_key) + "'");
+
+        return res.status(400).send('Incorrect key provided.');
+    }
+
+    let game_count = 0;
+    let chunk_count = 0;
+    let chunk = "";
+    const hash = req.body.hash || await get_best_network_hash();
+
+    function write_chunk() {
+        const filename = "train_" + hash.substring(0,8) + "_" + chunk_count + ".gz";
+        console.log("New  " + filename + " Chunk " + chunk_count+ " written");
+        zip.append(zlib.gzipSync(chunk), { name: filename });
+        game_count = 0;
+        chunk_count += 1;
+        chunk = "";
+    }
+
+    res.writeHead(200, {
+        'Content-Type': 'application/zip',
+        'Content-disposition': 'attachment; filename=chunks.zip'
+    });
+    const zip = archiver('zip')
+    zip.pipe(res);
+    db.collection("games").find( { networkhash: hash }, { _id: false, data: true } )
+    .limit(275000)
+    .forEach((match) => {
+        chunk += match.data;
+        game_count += 1;
+        if (game_count >= 64)
+            write_chunk();
+    }, (err) => {
+        if (err)
+            return res("Error fetching games: " + err);
+        else
+            if (game_count > 0)
+                write_chunk();
+            zip.finalize();
+    });
+}));
+
+app.post('/request-match', (req, res) => {
     // "number_to_play" : 400, "options" : { "playouts" : 1600, "resignation_percent" : 1, "randomcnt" : 0, "noise" : "false" }
 
     if (!req.body.key || req.body.key != auth_key) {
