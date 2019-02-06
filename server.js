@@ -117,6 +117,7 @@ const ELF_NETWORKS = [
 ];
 
 const auth_key = String(fs.readFileSync(__dirname + "/auth_key")).trim();
+const public_auth_key = String(fs.readFileSync(__dirname + "/public_auth_key")).trim();
 set_task_verification_secret(String(fs.readFileSync(__dirname + "/task_secret")).trim());
 
 const cacheIP24hr = new Cacheman("IP24hr");
@@ -810,6 +811,12 @@ app.post("/submit-match", asyncMiddleware(async(req, res) => {
         return res.status(400).send(msg);
     };
 
+    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+
+        return res.status(400).send('Incorrect key provided.');
+    }
+
     if (!req.files)
         return logAndFail("No files were uploaded.");
 
@@ -1000,6 +1007,12 @@ app.post("/submit", (req, res) => {
         console.log(`files: ${JSON.stringify(Object.keys(req.files || {}))}, body: ${JSON.stringify(req.body)}`);
         return res.status(400).send(msg);
     };
+
+    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+
+        return res.status(400).send('Incorrect key provided.');
+    }
 
     if (!req.files)
         return logAndFail("No files were uploaded.");
