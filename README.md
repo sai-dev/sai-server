@@ -126,6 +126,15 @@ First of all, install both `nodejs` and `mongodb`. The version of `nodejs` avail
 - `winnercolor`: color of the winner
 - `winnerhash`: hash of the winner network
 
+## users
+
+- `_id`: internal identifier
+- `username`: username for the user
+- `email`: email of the user
+- `password`: sha256 hashed password for the user
+- `active`: true if the account is active. Initially false, it is changes to true after confirmation.
+- `token`: randomly generated string used for email confirmation. It is deleted after confirmation.
+
 # API and inner working
 
 This is a very brief documentation of the web API of the server.
@@ -154,6 +163,8 @@ This is a very brief documentation of the web API of the server.
   - `score`: final score
   - `options_hash`: hash of the options used for the match
   - `random_seed`: seed used to play the match
+  - `username`: username wanting to submit the match
+  - `password`: sha256 hashed password for the user
 - `/submit-network`: submit a new network. It causes a new entry with metadatas to be inserted into the `networks` collection , while the network itself is copied into the `network` directory. It is a privileged API. Parameters:
   - `weights`: gzipped file with the new network
   - `training_counts`: (optional) number of games in the DB when the training data has been exported. Default value is the number of games in the db.
@@ -172,6 +183,8 @@ This is a very brief documentation of the web API of the server.
   - `options_hash`: hash of the options used for the match
   - `random_seed`: seed used to play the match
   - `verification`: the verification code previously sent by the server in the `get-task` reply
+  - `username`: username wanting to submit the self-play
+  - `password`: sha256 hashed password for the user
 - `/network-profiles`: displays a page with detailed informations on non-ELF networks.
 - `/network-profiles/<hash>`: displays a page with detailed informations on the non-ELF network with given hash.
 - `/rss`: returns an RSS feed of best networks
@@ -181,6 +194,8 @@ This is a very brief documentation of the web API of the server.
 - `/viewmatch/<hash>`: displays the SGF of the specifietd match-play.
 - `/viewmatch/<hash>.sgf`: returns the SGF of the specifietd match-play.
 - `/data/elograph.json`: displays the ELO graph
+- `/user-request`: create a new user with given username, email and password
+- `/user-confirm/<username>/<token>`: confirm creation of the given account
 - `/`: displays various statistics and general informations.
 
 # Examples

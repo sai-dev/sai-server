@@ -4,7 +4,7 @@ html(lang="en")
         script(src="/static/tablesort/tablesort.js")
         script(src="/static/tablesort/tablesort.number.js")
         link(href="/static/tablesort/tablesort.css" rel="stylesheet")
-    body 
+    body
         table(id="sort" border="1")
             thead
                 tr
@@ -18,6 +18,7 @@ html(lang="en")
                     th Download
                     th Client
                     th Version
+                    th User
             tbody
                 each item in data
                     tr
@@ -33,6 +34,7 @@ html(lang="en")
                             a(href="/viewmatch/" + item.sgfhash + ".sgf")  sgf
                         td #{item.ip}
                         td #{item.clientversion}
+                        td #{item.username}
         script.
             Tablesort.extend('minutes', item => /minutes/.test(item), (a, b) => {
                 a = (a.match(/([.\d]+) minutes/) || [])[1] || 0;
@@ -46,4 +48,3 @@ html(lang="en")
                     - (b.match(/(?:b|w)+([\d.]+)/i) ? RegExp.$1 : 0);
             });
             new Tablesort(document.getElementById('sort'));
-            

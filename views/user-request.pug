@@ -1,0 +1,27 @@
+doctype html
+html(lang="en")
+    body
+        h1 Request new user
+        p
+          | Please provide the username and password you want to use for submitting self-plays and matches to SAI.
+          | You also need to provide a valid email address, which will receive a confirm token for enabling the account.
+
+        p Please note that the username is exposed in a number of public SAI web pages.
+
+        form(action="", method="post")
+            p
+            label(for="username") Username: &nbsp;
+            input#username(type="text", name="username")
+            p
+            label(for="email") Email: &nbsp;
+            input#email(type="email", name="email")
+            p
+            label(for="password") Password: &nbsp;
+            input#password(type="password", name="password")
+            span &emsp;
+            label(for="password2") Confirm Password: &nbsp;
+            input#password2(type="password", name="password2")
+
+
+            p
+            button(type="submit") Create User
