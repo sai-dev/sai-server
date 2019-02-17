@@ -22,7 +22,9 @@ const rfs = require("rotating-file-stream");
 const dbutils = require("./classes/dbutils");
 const mongoMorgan = require("mongo-morgan");
 const Raven = require("raven");
-const config = require("./config");
+const config = require("./configsai");
+const email_validator = require("email-validator");
+const nodemailer = require('nodemailer');
 
 const archiver = require('archiver');
 const ini = require('ini');
@@ -159,6 +161,8 @@ const MATCH_EXPIRE_TIME = 30 * 60 * 1000; // matches expire after 30 minutes. Af
 // Similar data for requested selfplays
 let pending_selfplays = [];
 const SELFPLAY_EXPIRE_TIME = 30 * 60 * 1000; // selfplays expire after 30 minutes. After that the selfplay will be lost and an extra request will be made.
+
+const current_users = new Map();
 
 function analyze_sgf_comments (comment) {
     [alpkt, beta, pi, avg_eval, avg_bonus] = comment.split(",").map(parseFloat);
@@ -372,6 +376,20 @@ async function get_best_network_hash() {
     .catch(err => console.error(err));
 }
 
+async function get_current_users() {
+    current_users.clear();
+    const users = await db.collection("users").find({ active: true }, { username: 1, password: 1 }).toArray();
+    users.forEach( (user) => current_users.set(user.username, user.password) );
+}
+
+function validate_user(username, password, key) {
+    if (key && public_auth_key != "" && key == public_auth_key)
+        return "";
+    if (username && password && current_users.get(username) == password)
+        return username;
+    return false;
+}
+
 const PESSIMISTIC_RATE = 0.4;
 
 app.enable("trust proxy");
@@ -472,6 +490,10 @@ MongoClient.connect(MONGODB_URL, (err, database) => {
         .catch();
 
         get_pending_selfplays()
+        .then()
+        .catch();
+
+        get_current_users()
         .then()
         .catch();
 
@@ -827,16 +849,15 @@ app.post("/submit-network", asyncMiddleware((req, res) => {
 
 app.post("/submit-match", asyncMiddleware(async(req, res) => {
     const logAndFail = msg => {
-        console.log(`${req.ip} (${req.headers["x-real-ip"]}) /submit-match: ${msg}`);
+        console.log(`${req.ip} (${req.headers["x-real-ip"]})/submit-match: ${msg}`);
         console.log(`files: ${JSON.stringify(Object.keys(req.files || {}))}, body: ${JSON.stringify(req.body)}`);
         return res.status(400).send(msg);
     };
 
-    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
-        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+    const username = validate_user(req.body.username, req.body.password, req.body.key);
 
-        return res.status(400).send('Incorrect key provided.');
-    }
+    if (username === false)
+        return logAndFail("Invalid authentication.");
 
     if (!req.files)
         return logAndFail("No files were uploaded.");
@@ -924,7 +945,8 @@ app.post("/submit-match", asyncMiddleware(async(req, res) => {
                     clientversion: Number(req.body.clientversion), winnercolor: req.body.winnercolor,
                     movescount: (req.body.movescount ? Number(req.body.movescount) : null),
                     score: req.body.score,
-                    random_seed: req.body.random_seed
+                    random_seed: req.body.random_seed,
+                    username: username
                 }
             },
             { upsert: true }
@@ -948,7 +970,6 @@ app.post("/submit-match", asyncMiddleware(async(req, res) => {
         $inc.network1_wins = 1;
     else if (winner_net == 2)
         $inc.network1_losses = 1;
-
 
     // save to database using $inc and get modified document
     match = (await db.collection("matches").findOneAndUpdate(
@@ -1030,11 +1051,10 @@ app.post("/submit", (req, res) => {
         return res.status(400).send(msg);
     };
 
-    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
-        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+    const username = validate_user(req.body.username, req.body.password, req.body.key);
 
-        return res.status(400).send('Incorrect key provided.');
-    }
+    if (username === false)
+        return logAndFail("Invalid authentication.");
 
     if (!req.files)
         return logAndFail("No files were uploaded.");
@@ -1100,7 +1120,7 @@ app.post("/submit", (req, res) => {
                                     movescount: (req.body.movescount ? Number(req.body.movescount) : null),
                                 data: trainingdatafile, clientversion: Number(clientversion),
                                     winnercolor: req.body.winnercolor, random_seed: req.body.random_seed,
-                                selfplay_id: req.body.selfplay_id } },
+                                selfplay_id: req.body.selfplay_id, username: username } },
                   { upsert: true },
                         err => {
                             // Need to catch this better perhaps? Although an error here really is totally unexpected/critical.
@@ -2163,6 +2183,94 @@ app.get("/debug/promise", (req, res) => {
     foo();
     res.send("ok");
 });
+
+app.post("/user-request", asyncMiddleware(async(req, res) => {
+    const logAndFail = msg => {
+        console.log(`${req.ip} (${req.headers["x-real-ip"]}) /admin/user-request: ${msg}`);
+        return res.status(400).send(msg);
+    };
+
+    if ( !req.body.username )
+        return logAndFail("Username not provided.");
+    if ( !req.body.email )
+        return logAndFail("Email not provided.");
+    if ( ! email_validator.validate(req.body.email) )
+        return logAndFail("Email format is not valid.");
+
+    if (! req.body.password)
+        return logAndFail("No password provided.");
+    if (! req.body.password2)
+        return logAndFail("No confirmation password provided.");
+    if (req.body.password != req.body.password2)
+        return logAndFail("Password do not matches.");
+    if (req.body.password.length > 254)
+        return logAndFail("Password too long.");
+
+    const username = req.body.username;
+    const email = req.body.email;
+
+    const hash = crypto.createHash("sha256");
+    hash.update(req.body.password);
+    const password = hash.digest("hex");
+
+    if ( await db.collection("users").findOne({ email: email }) )
+        return logAndFail("User with given email address already exists.");
+
+    if ( await db.collection("users").findOne({ username: username }) )
+        return logAndFail("User with given username already exists.");
+
+    const token = crypto.randomBytes(48).toString('base64').replace(/\//g,'_').replace(/\+/g,'-');
+    const insert = await db.collection("users").insertOne({ username: username, email: email, password: password, token: token, active: false });
+
+    if (! insert)
+        return logAndFail("Error adding user to db.");
+
+    const transporter = nodemailer.createTransport(config.mail_transport);
+
+    const url = config.base_url + 'sai' + instance_number;
+
+    const mail_options = {
+        from: config.mail_from,
+        to: email,
+        cc: config.mail_from,
+        subject: "Request for SAI user account",
+        text: `Please confirm your email connecting to ${url}/user-confirm/${username}/${token}`
+    };
+
+    const email_info = await transporter.sendMail(mail_options);
+    if (! email_info)
+        return logAndFail("Error sending email.");
+
+    console.log(`${req.ip} (${req.headers["x-real-ip"]}) request new user ${username} for address ${email}.`);
+    res.send("ok, an email has been sent to your address.")
+}));
+
+app.get("/user-request", asyncMiddleware(async(req, res) => {
+    const pug_data = { };
+    res.render("user-request", pug_data);
+}));
+
+app.get("/user-confirm/:username/:token", asyncMiddleware(async(req, res) => {
+    const logAndFail = msg => {
+        console.log(`${req.ip} (${req.headers["x-real-ip"]}) /admin/user-confirm: ${msg}`);
+        return res.status(400).send(msg);
+    };
+
+    const username = req.params.username;
+    const token = req.params.token;
+
+    const command_result = await db.collection("users").findOneAndUpdate({ username: username, token: token },
+        { $set: { active: true }, $unset: { token: "" } });
+    const user = command_result.value;
+
+    if (! user)
+        return logAndFail("Wrong credentials.");
+    else {
+        current_users.set(user.username, user.password);
+        console.log(`${req.ip} (${req.headers["x-real-ip"]}) confirmed user ${username}.`);
+        return res.send("ok");
+    }
+}));
 
 // Catch all, return 404 page not found
 app.get("*", asyncMiddleware(async(req, res) => res.status(404).render("404")));
