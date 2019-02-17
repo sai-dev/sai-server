@@ -17,6 +17,7 @@ html(lang="en")
                     th Download
                     th Client
                     th Version
+                    th User
             tbody
                 each item in data
                     tr
@@ -31,6 +32,7 @@ html(lang="en")
                             a(href="/view/" + item.sgfhash + ".sgf")  sgf
                         td #{item.ip}
                         td #{item.clientversion}
+                        td #{item.username}
         script.
             Tablesort.extend('minutes', item => /minutes/.test(item), (a, b) => {
                 a = (a.match(/([.\d]+) minutes/) || [])[1] || 0;
