@@ -942,11 +942,14 @@ app.post("/submit-match", asyncMiddleware(async(req, res) => {
 
     // prepare $inc
     const $inc = { game_count: 1 };
-    const is_network1_win = (match.network1 == req.body.winnerhash) && req.body.winnercolor != "jigo";
-    if (is_network1_win)
-        $inc.network1_wins = 1;
-    else
-        $inc.network1_losses = 1;
+    const is_network1_win = (match.network1 == req.body.winnerhash);
+    if (req.body.winnercolor != "jigo") {
+        if (is_network1_win)
+            $inc.network1_wins = 1;
+        else
+            $inc.network1_losses = 1;
+    }
+
 
     // save to database using $inc and get modified document
     match = (await db.collection("matches").findOneAndUpdate(
