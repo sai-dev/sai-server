@@ -788,8 +788,8 @@ app.post("/submit-network", asyncMiddleware((req, res) => {
             ip: req.ip,
             training_count: +req.body.training_count || null,
             training_steps: +req.body.training_steps || null,
-            filters: req.files.weights.filters,
-            blocks: req.files.weights.blocks,
+            filters: +req.body.filters || req.files.weights.filters,
+            blocks: +req.body.blocks || req.files.weights.blocks,
             description: req.body.description
         };
 

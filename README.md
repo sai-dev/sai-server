@@ -159,6 +159,8 @@ This is a very brief documentation of the web API of the server.
   - `training_counts`: (optional) number of games in the DB when the training data has been exported. Default value is the number of games in the db.
   - `training_steps`: (optional) number of training steps of the network.
   - `description`: description of the network which is saved in the database.
+  - `filters`: number of filters in the network (if not present, it is autedected)
+  - `blocks`: number of blocks in the network (if not present, it is autedected)
   - `key`: password for the privileged API
 - `/submit`: submit the result of a self-play. The game is added to the `games` collection, and the counter of `self-plays` for the related network is increased.  It is used by `autogtp` when a self-play is terminated.
   - `sgf`: a file with the gzipped SGF of the self-play
