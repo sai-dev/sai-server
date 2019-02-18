@@ -49,15 +49,14 @@ async function get_matches_from_cache(db, limit = 100) {
 }
 
 // Win/Lose count of a match changed
-async function update_matches_stats_cache(db, match_id, is_network1_win) {
+async function update_matches_stats_cache(db, match_id, winner_net) {
     const matches = await get_matches_from_cache(db);
     const match = matches.find(item => item._id.toString() == match_id);
     match.game_count += 1;
-    if (is_network1_win) {
+    if (winner_net == 1)
         match.network1_wins += 1;
-    } else {
+    else if (winner_net == 2)
         match.network1_losses += 1;
-    }
     _update_winrate([match]);
     cache_matches.set("matches", matches);
 }
