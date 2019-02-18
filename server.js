@@ -942,13 +942,11 @@ app.post("/submit-match", asyncMiddleware(async(req, res) => {
 
     // prepare $inc
     const $inc = { game_count: 1 };
-    const is_network1_win = (match.network1 == req.body.winnerhash);
-    if (req.body.winnercolor != "jigo") {
-        if (is_network1_win)
-            $inc.network1_wins = 1;
-        else
-            $inc.network1_losses = 1;
-    }
+    const winner_net = req.body.winnercolor == "jigo" ? 0 : ( (match.network1 == req.body.winnerhash) ? 1 : 2 );
+    if (winner_net == 1)
+        $inc.network1_wins = 1;
+    else if (winner_net == 2)
+        $inc.network1_losses = 1;
 
 
     // save to database using $inc and get modified document
@@ -1017,7 +1015,7 @@ app.post("/submit-match", asyncMiddleware(async(req, res) => {
         discord.network_promotion_notify(promote_hash);
     }
 
-    dbutils.update_matches_stats_cache(db, match._id, is_network1_win);
+    dbutils.update_matches_stats_cache(db, match._id, winner_net);
     cachematches.clear(() => console.log("Cleared match cache."));
 }));
 
