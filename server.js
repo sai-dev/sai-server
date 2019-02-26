@@ -1484,7 +1484,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
                 //
                 if (item.network2 === null) continue;
 
-                let win_percent = item.game_count ? (100 * item.network1_wins / item.game_count).toFixed(2) : null;
+                let win_percent = item.game_count ? (50 * (1 + (item.network1_wins - item.network1_losses) / item.game_count)).toFixed(2) : null;
                 const itemmoment = new moment(item._id.getTimestamp());
 
                 if (win_percent) {
