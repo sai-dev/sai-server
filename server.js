@@ -509,7 +509,7 @@ app.use("/best-network-hash", asyncMiddleware(async(req, res) => {
 
 // Server will promote a network.
 //
-app.use('/promote',asyncMiddleware( async (req, res, next) => {
+app.post('/promote',asyncMiddleware( async (req, res, next) => {
     if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
         console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
 
