@@ -510,11 +510,12 @@ app.use("/best-network-hash", asyncMiddleware(async(req, res) => {
 // Server will promote a network.
 //
 app.post('/promote',asyncMiddleware( async (req, res, next) => {
-    if (public_auth_key != "" && (!req.body.key || req.body.key != public_auth_key)) {
-        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(public_auth_key) + "'");
+    if (!req.body.key || req.body.key != auth_key) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(auth_key) + "'");
 
         return res.status(400).send('Incorrect key provided.');
-    };
+    }
+
     if (!req.body.hash)
         return res.status(400).send('Network hash not provided.');
     fs.copyFileSync(__dirname + '/network/' + req.body.hash + '.gz', __dirname + '/network/best-network.gz');
