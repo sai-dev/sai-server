@@ -4,6 +4,8 @@ config.base_url = "http://sai.unich.it/";
 
 config.mail_from = "";
 
+config.default_dumbpass = true;
+
 config.mail_transport = {
     host: "",
     port: 587,
