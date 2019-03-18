@@ -198,9 +198,9 @@ function generate_branches(sgf) {
 
 function get_options_hash(options) {
     if (options.visits) {
-        return checksum("" + options.visits + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value + options.lambda + options.other_options).slice(0, 6);
+        return checksum("" + options.visits + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value + options.lambda + options.dumbpass + options.other_options).slice(0, 6);
     } else {
-        return checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value + options.lambda + options.other_options).slice(0, 6);
+        return checksum("" + options.playouts + options.resignation_percent + options.noise + options.randomcnt + options.komi + options.noise_value + options.lambda + options.dumbpass + options.other_options).slice(0, 6);
     }
 }
 
@@ -666,6 +666,9 @@ app.post('/request-match', (req, res) => {
     if (!req.body.lambda)
         req.body.lambda = default_lambda;
 
+    if (!req.body.dumbpass)
+        req.body.dumbpass = String(config.default_dumbpass);
+
     if (! ('other_options' in req.body))
         req.body.other_options = default_other_options_match;
 
@@ -674,6 +677,7 @@ app.post('/request-match', (req, res) => {
         noise: String(req.body.noise),
         komi: Number(req.body.komi),
         lambda: Number(req.body.lambda),
+        dumbpass: req.body.dumbpass.toLowerCase() === "true",
         other_options: String(req.body.other_options)};
 
     if (req.body.playouts) {
@@ -1200,6 +1204,7 @@ app.post("/submit", (req, res) => {
                                             komi: selfplay ? selfplay.komi +  branch.komi : default_komi + branch.komi,
                                             noise_value: selfplay ? selfplay.noise_value : default_noise_value,
                                             lambda: selfplay ? selfplay.lambda : default_lambda,
+                                            dumbpass: (selfplay && ('dumbpass' in selfplay)) ? selfplay.dumbpass : config.default_dumbpass,
                                             visits: selfplay ? selfplay.visits : default_visits,
                                             resignation_percent: selfplay ? selfplay.resignation_percent : default_resignation_percent,
                                             no_resignation_probability: selfplay ? selfplay.no_resignation_probability : default_no_resignation_probability,
@@ -1796,12 +1801,14 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
 
         //var options = {"playouts": "1600", "resignation_percent": "10", "noise": "true", "randomcnt": "30"};
         const options = { playouts: "0", visits: String(default_visits+1), resignation_percent: String(default_resignation_percent), noise: "true", randomcnt: String(default_randomcnt),
-                          komi: String(default_komi), noise_value: String(default_noise_value), lambda: String(default_lambda), other_options: String(default_other_options_selfplay) };
+                          komi: String(default_komi), noise_value: String(default_noise_value), lambda: String(default_lambda), other_options: String(default_other_options_selfplay),
+                          dumbpass: String(config.default_dumbpass) };
 
         if (self_play) {
             options.komi = String(self_play.komi);
             options.noise_value = String(self_play.noise_value);
             options.lambda = String(self_play.lambda);
+            if ('dumbpass' in self_play) options.dumbpass =  String(self_play.dumbpass);
             options.visits = String(self_play.visits);
             options.resignation_percent = String(self_play.resignation_percent);
             options.other_options = String(self_play.other_options);
@@ -1864,6 +1871,7 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         noise: req.body.noise ? req.body.noise.toLowerCase() == "true" : "true",
         komi: req.body.komi ? parseFloat(req.body.komi) : default_komi,
         lambda: req.body.lambda ? parseFloat(req.body.lambda) : default_lambda,
+        dumbpass: ("dumbpass" in req.body) ? req.body.dumbpass.toLowerCase() === "true" : config.default_dumbpass,
         other_options: 'other_options' in req.body ? String(req.body.other_options) : default_other_options_selfplay,
         number_to_play: req.body.number_to_play ? parseInt(req.body.number_to_play) : 1,
         visits: req.body.visits ? parseInt(req.body.visits) : default_visits,
