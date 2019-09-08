@@ -817,6 +817,9 @@ app.post("/submit-network", asyncMiddleware((req, res) => {
             training_steps: +req.body.training_steps || null,
             filters: +req.body.filters || req.files.weights.filters,
             blocks: +req.body.blocks || req.files.weights.blocks,
+            training_run: +req.body.training_run || null,
+            generation: +req.body.generation || null,
+            parent_hash: req.body.parent_hash,
             description: req.body.description
         };
 
@@ -1124,11 +1127,12 @@ app.post("/submit", (req, res) => {
                     db.collection("games").updateOne(
                         { sgfhash },
                         { $set: { ip: req.ip, networkhash, sgf: sgffile, options_hash: req.body.options_hash,
-                                    movescount: (req.body.movescount ? Number(req.body.movescount) : null),
-                                data: trainingdatafile, clientversion: Number(clientversion),
-                                    winnercolor: req.body.winnercolor, random_seed: req.body.random_seed,
-                                selfplay_id: req.body.selfplay_id, username: username } },
-                  { upsert: true },
+                                  movescount: (req.body.movescount ? Number(req.body.movescount) : null),
+                                  komi: (req.body.komi ? Number(req.body.komi) : null),
+                                  data: trainingdatafile, clientversion: Number(clientversion),
+                                  winnercolor: req.body.winnercolor, random_seed: req.body.random_seed,
+                                  selfplay_id: req.body.selfplay_id, username: username } },
+                        { upsert: true },
                         err => {
                             // Need to catch this better perhaps? Although an error here really is totally unexpected/critical.
                             //
