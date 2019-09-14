@@ -1128,7 +1128,7 @@ app.post("/submit", (req, res) => {
                         { sgfhash },
                         { $set: { ip: req.ip, networkhash, sgf: sgffile, options_hash: req.body.options_hash,
                                   movescount: (req.body.movescount ? Number(req.body.movescount) : null),
-                                  komi: (req.body.komi ? Number(req.body.komi) : null),
+                                  options: (req.body.options ? JSON.parse(req.body.options) : null),
                                   data: trainingdatafile, clientversion: Number(clientversion),
                                   winnercolor: req.body.winnercolor, random_seed: req.body.random_seed,
                                   selfplay_id: req.body.selfplay_id, username: username } },
