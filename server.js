@@ -1667,7 +1667,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
  * @returns {bool|object} False if no selfplay to schedule; otherwise, selfplay object
  */
 function shouldScheduleSelfplay (req, now) {
-  if ( !(pending_selfplays.length && req.params.version!=0) )
+  if ( !(pending_selfplays.length && req.params.autogtp != 0) )
     return false;
 
   let i = pending_selfplays.length;
@@ -1820,7 +1820,7 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
             }
             self_play.requests.push({ timestamp: now, seed: random_seed });
             if (Math.random() < self_play.no_resignation_probability) options.resignation_percent = "0";
-        } else if (! disable_default_selfplay) {
+        } else if (! disable_default_selfplay || req.params.autogtp == 0) {
             task.hash = best_network_hash;
             if (Math.random() < default_no_resignation_probability) options.resignation_percent = "0";
         }
