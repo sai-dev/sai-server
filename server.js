@@ -1631,7 +1631,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "</head><body>\n";
 
         page += "Would you like to contribute? Windows users:"
-        page += "<ol><li>Create username and password following <a target=\"_blank\" href=\"user-request\">this link (open in new tab)</a></li>"
+        page += "<ol><li>Create username and password following <a target=\"_blank\" href=\"user-request\">this link</a> (open in new tab)</li>"
         page += "<li>Download the <a href=\"https://github.com/sai-dev/sai/releases/download/sai-0.17.1/sai-0.17.1.zip\">latest release of SAI</a></li>"
         page += "<li>Unzip and run sai.vbs</li></ol>"
 
@@ -2285,7 +2285,7 @@ app.get("/user-confirm/:username/:token", asyncMiddleware(async(req, res) => {
     else {
         current_users.set(user.username, user.password);
         console.log(`${req.ip} (${req.headers["x-real-ip"]}) confirmed user ${username}.`);
-        return res.send("ok");
+        return res.send("Congratulations! Your account has been created.");
     }
 }));
 

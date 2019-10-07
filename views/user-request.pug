@@ -6,7 +6,13 @@ html(lang="en")
           | Please provide the username and password you want to use for submitting self-plays and matches to SAI.
           | You also need to provide a valid email address, which will receive a confirm token for enabling the account.
 
-        p Please note that the username is exposed in a number of public SAI web pages.
+        p
+          | Please note that the username is exposed in a number of public SAI web pages. Moreover, we do not use HTTPS
+          | at the moment, hence password travels in cleartext on the web.
+
+        p
+          | <b>DO NOT REUSE THIS PASSWORD FOR ANY OTHER SERVICE.</b>
+
 
         form(action="", method="post")
             p
@@ -21,7 +27,5 @@ html(lang="en")
             span &emsp;
             label(for="password2") Confirm Password: &nbsp;
             input#password2(type="password", name="password2")
-
-
             p
             button(type="submit") Create User
