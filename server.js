@@ -1633,7 +1633,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "Would you like to contribute? Windows users:"
         page += "<ol><li>Create username and password following <a target=\"_blank\" href=\"user-request\">this link</a> (open in new tab)</li>"
         page += "<li>Download the <a href=\"https://github.com/sai-dev/sai/releases/download/sai-0.17.1/sai-0.17.1.zip\">latest release of SAI</a></li>"
-        page += "<li>Unzip and run sai.vbs</li></ol>"
+        page += "<li>Unzip and double-click on sai.hta, giving the needed authorization if asked for</li></ol>"
 
         page += "<br>Autogtp will automatically download better networks once found.<br>";
         page += "Not each trained network will be a strength improvement over the prior one. Patience please. :)<br>";
