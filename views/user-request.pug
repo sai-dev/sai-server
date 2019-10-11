@@ -3,11 +3,13 @@ html(lang="en")
     body
         h1 Request new user
         p
-          | Please provide the username and password you want to use for submitting self-plays and matches to SAI.
+          | Please provide the computername and password you want to use for submitting self-plays and matches to SAI.
           | You also need to provide a valid email address, which will receive a confirm token for enabling the account.
+          | We suggest to create different accounts for different computers. The same email address may be used for
+          | multiple accounts.
 
         p
-          | Please note that the username is exposed in a number of public SAI web pages. Moreover, we do not use HTTPS
+          | Please note that the computername is exposed in a number of public SAI web pages. Moreover, we do not use HTTPS
           | at the moment, hence password travels in cleartext on the web.
 
         p
@@ -16,7 +18,7 @@ html(lang="en")
 
         form(action="", method="post")
             p
-            label(for="username") Username: &nbsp;
+            label(for="username") Computername: &nbsp;
             input#username(type="text", name="username")
             p
             label(for="email") Email: &nbsp;
