@@ -1631,7 +1631,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "</head><body>\n";
 
         page += "Would you like to contribute? Windows users:"
-        page += "<ol><li>Create username and password following <a target=\"_blank\" href=\"user-request\">this link</a> (open in new tab)</li>"
+        page += "<ol><li>Create computername and password following <a target=\"_blank\" href=\"user-request\">this link</a> (open in new tab)</li>"
         page += "<li>Download the <a href=\"https://github.com/sai-dev/sai/releases/download/sai-0.17.1/sai-0.17.1.zip\">latest release of SAI</a></li>"
         page += "<li>Unzip and double-click on sai.hta, giving the needed authorization if asked for</li></ol>"
 
@@ -2208,7 +2208,7 @@ app.post("/user-request", asyncMiddleware(async(req, res) => {
     };
 
     if ( !req.body.username )
-        return logAndFail("Username not provided.");
+        return logAndFail("Computername not provided.");
     if ( !req.body.email )
         return logAndFail("Email not provided.");
     if ( ! email_validator.validate(req.body.email) )
@@ -2230,11 +2230,8 @@ app.post("/user-request", asyncMiddleware(async(req, res) => {
     hash.update(req.body.password);
     const password = hash.digest("hex");
 
-    if ( await db.collection("users").findOne({ email: email }) )
-        return logAndFail("User with given email address already exists.");
-
     if ( await db.collection("users").findOne({ username: username }) )
-        return logAndFail("User with given username already exists.");
+        return logAndFail("User with given computername already exists.");
 
     const token = crypto.randomBytes(48).toString('base64').replace(/\//g,'_').replace(/\+/g,'-');
     const insert = await db.collection("users").insertOne({ username: username, email: email, password: password, token: token, active: false });
@@ -2251,14 +2248,14 @@ app.post("/user-request", asyncMiddleware(async(req, res) => {
         to: email,
         cc: config.mail_from,
         subject: "Request for SAI user account",
-        text: `Please confirm your email connecting to ${url}/user-confirm/${encodeURIComponent(username)}/${token}`
+        text: `Please confirm your email for computer ${username} connecting to ${url}/user-confirm/${encodeURIComponent(username)}/${token}`
     };
 
     const email_info = await transporter.sendMail(mail_options);
     if (! email_info)
         return logAndFail("Error sending email.");
 
-    console.log(`${req.ip} (${req.headers["x-real-ip"]}) request new user ${username} for address ${email}.`);
+    console.log(`${req.ip} (${req.headers["x-real-ip"]}) request new computer ${username} for address ${email}.`);
     res.send("ok, an email has been sent to your address.")
 }));
 
@@ -2285,7 +2282,7 @@ app.get("/user-confirm/:username/:token", asyncMiddleware(async(req, res) => {
     else {
         current_users.set(user.username, user.password);
         console.log(`${req.ip} (${req.headers["x-real-ip"]}) confirmed user ${username}.`);
-        return res.send("Congratulations! Your account has been created.");
+        return res.send(`Congratulations! Your account for computer ${username} has been created.`);
     }
 }));
 
