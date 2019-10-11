@@ -2248,7 +2248,7 @@ app.post("/user-request", asyncMiddleware(async(req, res) => {
         to: email,
         cc: config.mail_from,
         subject: "Request for SAI user account",
-        text: `Please confirm your email for computer ${username} connecting to ${url}/user-confirm/${username}/${token}`
+        text: `Please confirm your email for computer ${username} connecting to ${url}/user-confirm/${encodeURIComponent(username)}/${token}`
     };
 
     const email_info = await transporter.sendMail(mail_options);
