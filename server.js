@@ -1630,12 +1630,27 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "</style>\n";
         page += "</head><body>\n";
 
-        page += "Would you like to contribute? Windows users:"
-        page += "<ol><li>Create computername and password following <a target=\"_blank\" href=\"user-request\">this link</a> (open in new tab)</li>"
-        page += "<li>Download the <a href=\"https://github.com/sai-dev/sai/releases/download/sai-0.17.1/sai-0.17.1.zip\">latest release of SAI</a></li>"
-        page += "<li>Unzip and double-click on sai.hta, giving the needed authorization if asked for</li></ol>"
+        page += "<p><strong>Would you like to contribute?</strong> If you have a computer with a recent GPU and updated drivers, "
+        page += "and are willing to let it run for some hours per day, please do as follows:</p>"
+        page += "<ol>"
+        page += "<li>Create computername and password following <a target=\"_blank\" href=\"user-request\">this link</a> (open in new tab)</li>"
+        page += "<li>If you are a Windows user:"
+        page += "<ol>"
+        page += "<li>Open <a href=\"https://github.com/sai-dev/sai/releases/\">this page</a> and download the latest release of SAI fitting the characteristics of your computer.</li>"
+        page += "<li>Unzip and double-click on sai.hta – authorization for this operation may be requested, if so please grant it</li>"
+        page += "</ol>"
+        page += "<li>If you are a Linux or macOS user, follow this link: <a href=\"https://github.com/sai-dev/sai#macos-and-linux\">https://github.com/sai-dev/sai#macos-and-linux</a>"
+        page += "</ol>"
 
-        page += "<br>Autogtp will automatically download better networks once found.<br>";
+        page += "<p>Notice that after downloading SAI, <strong>you will be able to play with the superhuman SAI 9x9!</strong> <em>This is a superhuman "
+        page +=" bot and can play with arbitrary komi – with 6 additional komi points a strong player may beat it.</em> You will also be able to "
+        page += "play with SAI 19x19, however on this board SAI will be quite weak for many months. "
+        page += "In order to play, if you are a Windows user, please double click on sai9x9.bat in the same archive.</p>"
+
+        page += "<p>More details at <a href=\"https://github.com/sai-dev/sai#what\">https://github.com/sai-dev/sai#what</a></p>"
+        page += "<hr>"
+
+        page += "Autogtp will automatically download better networks once found.<br>";
         page += "Not each trained network will be a strength improvement over the prior one. Patience please. :)<br>";
         page += "Match games are played at full strength (only " + default_visits + " visits).<br>";
         if (default_randomcnt < 999)
@@ -2256,7 +2271,7 @@ app.post("/user-request", asyncMiddleware(async(req, res) => {
         return logAndFail("Error sending email.");
 
     console.log(`${req.ip} (${req.headers["x-real-ip"]}) request new computer ${username} for address ${email}.`);
-    res.send("ok, an email has been sent to your address.")
+    res.send("OK, an email has been sent to your address. You can now close this window.")
 }));
 
 app.get("/user-request", asyncMiddleware(async(req, res) => {
@@ -2282,7 +2297,7 @@ app.get("/user-confirm/:username/:token", asyncMiddleware(async(req, res) => {
     else {
         current_users.set(user.username, user.password);
         console.log(`${req.ip} (${req.headers["x-real-ip"]}) confirmed user ${username}.`);
-        return res.send(`Congratulations! Your account for computer ${username} has been created.`);
+        return res.send(`Congratulations! Your account for computer ${username} has been created. You can now close this window.`);
     }
 }));
 
