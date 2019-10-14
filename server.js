@@ -1751,7 +1751,7 @@ function shouldScheduleMatch(req, now) {
  * Get a self-play or match task depending on various client versions.
  * E.g., /get-task/0, /get-task/16, /get-task/0/0.14, /get-task/16/0.14
  */
-app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(req, res) => {
+async function get_task(req, res) {
     const required_client_version = String(16);
     const required_leelaz_version = String("0.15");
 
@@ -1867,6 +1867,21 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
 
         console.log(`${req.ip} (${req.headers["x-real-ip"]}) got task: selfplay ${JSON.stringify(task)}`);
     }
+}
+
+// GET version of get-task
+app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(req, res) => {
+    get_task(req,res);
+}));
+
+// POST version of get-task with authentication
+app.post("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(req, res) => {
+    const username = validate_user(req.body.username, req.body.password, req.body.key);
+    if (username === false) {
+        console.log(`ERROR: ${req.ip} invalid authentication`);
+        return res.status(400).send("Invalid authentication");
+    } else
+        get_task(req,res);
 }));
 
 app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
