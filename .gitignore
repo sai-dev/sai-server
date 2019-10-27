@@ -5,6 +5,7 @@ task_secret
 network
 static/rss.xml
 static/networks/
+static/elostat.json
 logs/*
 network
 npm-debug.log

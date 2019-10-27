@@ -1440,7 +1440,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         db.collection("games").find({ _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60 * 24) } }).count()
         .then(count => `${counter} total <a href="/self-plays">self-play games</a> (${count} in past 24 hours, `),
         db.collection("games").find({ _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60) } }).count()
-        .then(count => `${count} in past hour, <a href="https://github.com/gcp/leela-zero/issues/1311#issuecomment-386422486">includes ${elf_counter} ELF</a>).<br/>`),
+        .then(count => `${count} in past hour).<br/>`),
         db.collection("match_games").find().count()
         .then(count => `${count} total match games (`),
         db.collection("match_games").find({ _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60 * 24) } }).count()
@@ -1637,7 +1637,8 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "<li>If you are a Windows user:"
         page += "<ol>"
         page += "<li>Open <a href=\"https://github.com/sai-dev/sai/releases/\">this page</a> and download the latest release of SAI fitting the characteristics of your computer.</li>"
-        page += "<li>Unzip and double-click on sai.hta – authorization for this operation may be requested, if so please grant it</li>"
+        page += "<li>Double click on the exe file, this will unzip the archive.</li>"
+	page += "<li>Double-click on sai.hta – authorization for this operation may be requested, if so please grant it</li>"
         page += "</ol>"
         page += "<li>If you are a Linux or macOS user, follow this link: <a href=\"https://github.com/sai-dev/sai#macos-and-linux\">https://github.com/sai-dev/sai#macos-and-linux</a>"
         page += "</ol>"
@@ -1647,7 +1648,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "play with SAI 19x19, however on this board SAI will be quite weak for many months. "
         page += "In order to play, if you are a Windows user, please double click on sai9x9.bat in the same archive.</p>"
 
-        page += "<p>More details at <a href=\"https://github.com/sai-dev/sai#what\">https://github.com/sai-dev/sai#what</a></p>"
+        page += "<p>More details in the <a href=\"https://github.com/sai-dev/sai#what\">Github readme</a> and in the <a href=\"https://github.com/sai-dev/sai/wiki\">wiki</a></p>"
         page += "<hr>"
 
         page += "Autogtp will automatically download better networks once found.<br>";
@@ -1674,7 +1675,10 @@ app.get("/", asyncMiddleware(async(req, res) => {
         });
 
         page += "<br>";
-        page += "<h4>Recent Strength Graph (<a href=\"/static/elo.html\">Full view</a>.)</h4>";
+        page += "<h4>Recent Strength Graph (<a href=\"/static/elo.html\">Full view</a>.) [Reload with shift-F5 or clean cache to update the graph! We have still some problems with the page.]</h4>";
+        page += "<br>";
+        page += "Currently the graph is manually updated soon after a new network starts self-plays.<br>";
+        page += "The plot shows a proper Bayes-Elo rating, computed on the set of all played matches.<br>";
         page += "<iframe width=\"950\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/elo.html?0#recent=2500000\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
         page += "<br><br>Times are in GMT+0100 (CET)<br>\n";
         page += network_table;
@@ -1721,7 +1725,7 @@ function shouldScheduleMatch(req, now) {
 
   // Find the first match this client can play
   let match;
-  let i = pending_matches.length;
+  let i = Math.ceil(Math.random() * pending_matches.length);
   while (--i >= 0) {
     match = pending_matches[i];
     break;
@@ -1982,7 +1986,7 @@ app.get("/view/:hash(\\w+)", (req, res) => {
 });
 
 app.get("/self-plays", (req, res) => {
-    db.collection("games").find({}, { data: 0 }).sort({ _id: -1 }).limit(400).toArray()
+    db.collection("games").find({}, { data: 0 }).sort({ _id: -1 }).limit(1200).toArray()
     .then(list => {
         process_games_list(list, req.ip);
         // render pug view self-plays
