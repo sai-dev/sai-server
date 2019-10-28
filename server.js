@@ -167,6 +167,7 @@ const current_users = new Map();
 function analyze_sgf_comments (comment) {
     [alpkt, alpkt0, beta, pi, avg_eval, avg_bonus, is_blunder] = comment.split(",").map(parseFloat);
 //    return  { priority: branching_coefficient*(0.25-avg_eval*(1-avg_eval)), komi: Math.round(alpkt) };
+    if (alpkt == 0.0 && beta == 1.0) return { priority: 0.0, komi: 0 };
     return  { priority: branching_coefficient*0.25, komi: Math.round(alpkt) };
 }
 
