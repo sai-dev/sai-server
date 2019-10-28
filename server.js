@@ -1883,7 +1883,7 @@ app.get("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(
 app.post("/get-task/:autogtp(\\d+)(?:/:leelaz([.\\d]+)?)", asyncMiddleware(async(req, res) => {
     const username = validate_user(req.body.username, req.body.password, req.body.key);
     if (username === false) {
-        console.log(`ERROR: ${req.ip} invalid authentication`);
+        console.log(`${req.ip} (${req.headers['x-real-ip']}) /get-task: invalid authentication for "${req.body.username}"`);
         return res.status(400).send("Invalid authentication");
     } else
         get_task(req,res);
