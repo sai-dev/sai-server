@@ -18,7 +18,7 @@
 
   <script type="text/javascript">
   // Get the data for the graph and for computing the max values
-  fetch("/static/elostat.json")
+  fetch("/data/newelograph.json")
   .then(response => response.json())
   .then(values => {
     // Share the axis variables for use in multiple layers
@@ -49,8 +49,8 @@
       // Find the other bounds for games and rating of recent networks
       var minGames = Math.min(...recentNetworks.map(v => v.net));
       var minRating = Math.min(...recentNetworks.map(v => v.rating));
-//      var maxRating = Math.max(...recentNetworks.map(v => v.rating));
-      var maxRating = maxGames * 0.025;
+      var maxRating = Math.max(...recentNetworks.map(v => v.rating));
+      // var maxRating = maxGames * 0.025;
 
       // Set the domain bounds of each axis
       x.scale = { "domain": [minGames, maxGames] };

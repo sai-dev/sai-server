@@ -1686,7 +1686,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         });
 
         page += "<br>";
-        page += "<h4>Recent Strength Graph (<a href=\"/static/elo.html\">Full view</a>.) [Reload with shift-F5 or clean cache to update the graph! We have still some problems with the page.]</h4>";
+        page += "<h4>Recent Strength Graph (<a href=\"/static/elo.html\">Full view</a>.)</h4>";
         page += "<br>";
         page += "Currently the graph is manually updated soon after a new network starts self-plays.<br>";
         page += "The plot shows a proper Bayes-Elo rating, computed on the set of all played matches.<br>";
@@ -2212,6 +2212,73 @@ app.get("/data/elograph.json", asyncMiddleware(async(req, res) => {
     });
 
     res.json(json);
+}));
+
+app.get("/data/newelograph.json", asyncMiddleware(async(req, res) => {
+    // cache in `cachematches`, so when new match result is uploaded, it gets cleared as well
+    const json = await cachematches.wrap("newelograph", "1d", async() => {
+    console.log("fetching data for newelograph.json, should be called once per day or when `cachematches` is cleared");
+
+    return db.collection("networks").find().sort({ _id: -1 }).toArray()
+    .then(networks => {
+        // prepare json result
+        const json = [];
+        networks.forEach(item => {
+            if (typeof item.rating != "undefined") {
+                const leelaz = item.description ?  item.description.startsWith("LZ") : false;
+                json.push({
+                    rating: item.rating,
+                    net: leelaz ? item.training_steps / 5 : Math.max(0.0, Number(item.training_count + item.rating / 100000)),
+                    sprt: leelaz ? "TEST" : item.rating == 0 ? "???" : item.game_count > 0 ? "PASS" : "FAIL",
+                    hash: item.description || item.hash.slice(0, 6),
+                    best: item.game_count > 0
+                })
+            }
+        });
+
+        // shortcut for sending json result using `JSON.stringify`
+        // and set `Content-Type: application/json`
+        return json;
+    }).catch(err => {
+        console.log("ERROR data/newelograph.json: " + err);
+        res.send("ERROR data/newelograph.json: " + err);
+    });
+    });
+
+    res.json(json);
+}));
+
+app.post('/submit-ratings', asyncMiddleware(async(req, res) => {
+    if (!req.body.key || req.body.key != auth_key) {
+        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(auth_key) + "'");
+
+        return res.status(400).send("Incorrect key provided.\n");
+    }
+    if (!req.body.ratings)
+        return res.status(400).send("Parameter ratings is missing.\n");
+
+    var json;
+    try {
+        json = JSON.parse(req.body.ratings);
+    } catch(err) {
+        return res.status(400).send("Parameters rating is not a valid JSON.\n");
+    }
+    if (!(json instanceof Array))
+        return res.status(400).send("Parameters ratings is not a JSON array.\n");
+
+    json.forEach(item => {
+        if ((typeof item.hash == "string") && (typeof item.rating == "number")) {
+            const hash_arr = item.hash.split(':');
+            const hash = hash_arr.length == 2 ? hash_arr[1] : item.hash;
+            db.collection("networks").updateOne(
+                { hash: { $regex: "^"+hash } },
+                { $set: { rating: item.rating }},
+                { upsert: false }
+            );
+        }
+    });
+
+    res.send("Ratings updated.\n");
 }));
 
 /*
