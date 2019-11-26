@@ -48,7 +48,7 @@ const no_early_fail = configsai.no_early_fail ?  Boolean(configsai.no_early_fail
 const branching_coefficient = configsai.branching_coefficient ? Number(configsai.branching_coefficient) : 0.1;
 const branching_maxbranches = configsai.branching_maxbranches ? Number(configsai.branching_maxbranches) : 3;
 
-const MONGODB_URL = "mongodb://localhost/sai"+instance_number;
+const MONGODB_URL = configsai.mongodb_url ? configsai.mongodb_url : "mongodb://localhost/sai"+instance_number;
 
 if (config.RAVEN_DSN) {
     console.log("init raven");
