@@ -174,7 +174,7 @@ function seed_from_mongolong(seed) {
  */
 function process_games_list(list, ip, winner = "") {
     const ipMap = new Map();
-    let wins = 0;
+    let wins = 0.0;
     list.forEach((item, index) => {
         if (!ipMap.has(item.ip)) {
             ipMap.set(item.ip, item.ip == ip ? "you" : ipMap.size + 1);
@@ -183,7 +183,7 @@ function process_games_list(list, ip, winner = "") {
         item.ip = ipMap.get(item.ip);
 
         // Update win rate stats from games so far
-        wins += item.winnerhash == winner;
+        wins += (item.score == "0" ? 0.5 : ( item.winnerhash == winner ));
         item.num = index + 1;
         item.winrate = (wins / item.num * 100).toFixed(2);
 
