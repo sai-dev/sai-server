@@ -1520,7 +1520,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         .toArray()
         .then(list => {
             let match_table = "<table class=\"matches-table\" border=1><tr><th colspan=5>Test Matches (100 Most Recent)</th></tr>\n";
-            match_table += "<tr><th>Start Date</th><th>Network Hashes</th><th>Wins / Losses</th><th>Games</th><th>SPRT</th></tr>\n";
+            match_table += "<tr><th>Start Date</th><th>Network Hashes</th><th>Wins : Draws : Losses</th><th>Games</th><th>Type</th></tr>\n";
             styles += ".match-test { background-color: rgba(0,0,0,0.1); font-style: italic; }\n";
 
             for (const item of list) {
@@ -1532,7 +1532,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
                 const itemmoment = new moment(item._id.getTimestamp());
 
                 if (win_percent) {
-                    if (win_percent >= 55) {
+                    if (win_percent >= 60) {
                         win_percent = "<b>" + win_percent + "</b>";
                     }
                     win_percent = " (" + win_percent + "%)";
@@ -1571,41 +1571,43 @@ app.get("/", asyncMiddleware(async(req, res) => {
                 }
 
                 match_table += "</td>"
-                    + "<td>" + item.network1_wins + " : " + item.network1_losses
+                    + "<td>" + item.network1_wins + " : " + (item.game_count - item.network1_losses - item.network1_wins) + " : " + item.network1_losses
                         + (win_percent ? win_percent + "</td>" : "</td>")
-                    + "<td>" + item.game_count + " / " + item.number_to_play + "</td>"
-                    + "<td>";
+                    + "<td>" + item.game_count + " / " + item.number_to_play + "</td>";
+                    // + "<td>";
+                match_table += "<td>" + ( item.type ? item.type : "" ) + "</td>";
 
-                // Treat non-test match that has been promoted as PASS
-                const promotedMatch = bestRatings.has(item.network1) && !item.is_test;
-                switch (promotedMatch || SPRT(item.network1_wins, item.network1_losses)) {
-                    case true:
-                        match_table += "<b>PASS</b>";
-                        break;
-                    case false:
-                        match_table += "<i>fail</i>";
-                        break;
-                    default: {
-                        // -2.9444389791664403 2.9444389791664403 == range of 5.88887795833
-                        let width = Math.round(100 * (2.9444389791664403 + LLR(item.network1_wins, item.network1_losses, 0, 35)) / 5.88887795833);
-                        let color;
+                // // Treat non-test match that has been promoted as PASS
+                // const promotedMatch = bestRatings.has(item.network1) && !item.is_test;
+                // switch (promotedMatch || SPRT(item.network1_wins, item.network1_losses)) {
+                //     case true:
+                //         match_table += "<b>PASS</b>";
+                //         break;
+                //     case false:
+                //         match_table += "<i>fail</i>";
+                //         break;
+                //     default: {
+                //         // -2.9444389791664403 2.9444389791664403 == range of 5.88887795833
+                //         let width = Math.round(100 * (2.9444389791664403 + LLR(item.network1_wins, item.network1_losses, 0, 35)) / 5.88887795833);
+                //         let color;
 
-                        if (width < 0) {
-                            color = "C11B17";
-                            width = 0;
-                        } else if (width > 100) {
-                            color = "0000FF";
-                            width = 100;
-                        } else {
-                            color = "59E817";
-                        }
+                //         if (width < 0) {
+                //             color = "C11B17";
+                //             width = 0;
+                //         } else if (width > 100) {
+                //             color = "0000FF";
+                //             width = 100;
+                //         } else {
+                //             color = "59E817";
+                //         }
 
-                        styles += ".n" + item.network1.slice(0, 8) + "{ width: " + width + "%; background-color: #" + color + ";}\n";
-                        match_table += "<div class=\"n" + item.network1.slice(0, 8) + "\">&nbsp;</div>";
-                    }
-                }
+                //         styles += ".n" + item.network1.slice(0, 8) + "{ width: " + width + "%; background-color: #" + color + ";}\n";
+                //         match_table += "<div class=\"n" + item.network1.slice(0, 8) + "\">&nbsp;</div>";
+                //     }
+                // }
 
-                match_table += "</td></tr>\n";
+                // match_table += "</td></tr>\n";
+                match_table += "</tr>\n";
             }
 
             match_table += "</table>\n";
