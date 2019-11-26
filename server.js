@@ -1690,7 +1690,8 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "<br>";
         page += "Currently the graph is manually updated soon after a new network starts self-plays.<br>";
         page += "The plot shows a proper Bayes-Elo rating, computed on the set of all played matches.<br>";
-        page += "<iframe width=\"950\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/elo.html?0#recent=2500000\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
+        page += "<h4>The x-axis scale is 1/5 for Leela Zero networks (grey crosses).</h4><br>";
+        page += "<iframe width=\"1100\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/elo.html?0#recent=2500000\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
         page += "<br><br>Times are in GMT+0100 (CET)<br>\n";
         page += network_table;
         page += match_table;
