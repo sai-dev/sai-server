@@ -635,6 +635,12 @@ app.post('/request-match', (req, res) => {
     else if (!network_exists(req.body.network2))
         return res.status(400).send("network2 hash not found.");
 
+    if (!req.body.type)
+        req.body.type = null;
+
+    if (!req.body.rem)
+        req.body.rem = null;
+
     // TODO Need to support new --visits flag as an alternative to --playouts. Use visits if both are missing? Don't allow both to be set.
     //
     if (req.body.playouts && req.body.visits)
@@ -703,6 +709,8 @@ app.post('/request-match', (req, res) => {
         network1_wins: 0,
         game_count: 0, number_to_play: Number(req.body.number_to_play),
         is_test: req.body.is_test,
+        type: req.body.type,
+        rem: req.body.rem,
         options, options_hash: get_options_hash(options) };
 
     db.collection("matches").insertOne(match)
