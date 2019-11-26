@@ -1735,32 +1735,37 @@ function shouldScheduleMatch(req, now) {
     return false;
   }
 
-  // Find the first match this client can play
-  let match;
-  let i = Math.ceil(Math.random() * pending_matches.length);
+  // Find the first match this client can play, starting from a random match
+  // and looping until something to do is found or all maches are scheduled
+  let i = pending_matches.length;
+  const rot = Math.floor(Math.random() * pending_matches.length);
   while (--i >= 0) {
-    match = pending_matches[i];
-    break;
+    let j = ( i + rot ) % pending_matches.length;
+    let match = pending_matches[j];
+
+    const deleted = match.requests.filter(e => e.timestamp < now - MATCH_EXPIRE_TIME).length;
+    const oldest = (match.requests.length > 0 ? (now - match.requests[0].timestamp) / 1000 / 60 : 0).toFixed(2);
+    match.requests.splice(0, deleted);
+    const requested = match.requests.length;
+    const needed = how_many_games_to_queue(
+      match.number_to_play,
+      match.network1_wins,
+      match.network1_losses,
+      PESSIMISTIC_RATE,
+      bestRatings.has(match.network1),
+      no_early_fail);
+
+    const result = needed > requested;
+    console.log(`Need ${needed} match games. Requested ${requested}, deleted ${deleted}. Oldest ${oldest}m ago. Will ${result ? "" : "not"} schedule match.`);
+
+    if (result) {
+      return match;
+    }
   }
 
   // Don't schedule if we ran out of potential matches for this client
-  if (i < 0) return false;
-
-  const deleted = match.requests.filter(e => e.timestamp < now - MATCH_EXPIRE_TIME).length;
-  const oldest = (match.requests.length > 0 ? (now - match.requests[0].timestamp) / 1000 / 60 : 0).toFixed(2);
-  match.requests.splice(0, deleted);
-  const requested = match.requests.length;
-  const needed = how_many_games_to_queue(
-                match.number_to_play,
-                match.network1_wins,
-                match.network1_losses,
-                PESSIMISTIC_RATE,
-                bestRatings.has(match.network1),
-                no_early_fail);
-  const result = needed > requested;
-  console.log(`Need ${needed} match games. Requested ${requested}, deleted ${deleted}. Oldest ${oldest}m ago. Will schedule ${result ? "match" : "selfplay"}.`);
-
-  return result && match;
+  console.log(`No need of match games. Will schedule self-play.`);
+  return false;
 }
 
 /**
@@ -1822,7 +1827,10 @@ async function get_task(req, res) {
 
         match.requests.push({ timestamp: now, seed: random_seed });
 
-        if (match.game_count >= match.number_to_play) pending_matches.pop();
+        if (match.game_count >= match.number_to_play) {
+            const pending_match_index = pending_matches.findIndex(m => m._id.equals(match._id));
+            pending_matches.splice(pending_match_index, 1);
+        }
 
         console.log(`${req.ip} (${req.headers["x-real-ip"]}) got task: match ${match.network1.slice(0, 8)} vs ${match.network2.slice(0, 8)} ${match.game_count + match.requests.length} of ${match.number_to_play} ${JSON.stringify(task)}`);
 //    } else if ( req.params.autogtp==1 && Math.random() > .2 ) {
