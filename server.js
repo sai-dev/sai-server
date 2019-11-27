@@ -1460,9 +1460,9 @@ app.get("/", asyncMiddleware(async(req, res) => {
             // Exclude ELF network
             { $match: { $and: [{ game_count: { $gt: 0 } }, { hash: { $not: { $in: ELF_NETWORKS } } }] } },
             { $sort: { _id: 1 } },
-            { $group: { _id: 1, networks: { $push: { _id: "$_id", hash: "$hash", game_count: "$game_count", training_count: "$training_count", filters: "$filters", blocks: "$blocks" } } } },
+          { $group: { _id: 1, networks: { $push: { _id: "$_id", hash: "$hash", game_count: "$game_count", training_count: "$training_count", filters: "$filters", blocks: "$blocks", rating: "$rating" } } } },
             { $unwind: { path: "$networks", includeArrayIndex: "networkID" } },
-            { $project: { _id: "$networks._id", hash: "$networks.hash", game_count: "$networks.game_count", training_count: "$networks.training_count", filters: "$networks.filters", blocks: "$networks.blocks", networkID: 1 } },
+          { $project: { _id: "$networks._id", hash: "$networks.hash", game_count: "$networks.game_count", training_count: "$networks.training_count", filters: "$networks.filters", blocks: "$networks.blocks", rating: "$networks.rating", networkID: 1 } },
             { $sort: { networkID: -1 } },
             { $limit: 10000 }
         ])
@@ -1485,7 +1485,8 @@ app.get("/", asyncMiddleware(async(req, res) => {
                     + "</a></td><td>"
                     + (item.filters && item.blocks ? `${item.blocks}x${item.filters}` : "TBD")
                     + "</td><td>"
-                    + ~~bestRatings.get(item.hash)
+                    + item.rating
+//                    + ~~bestRatings.get(item.hash)
                     + "</td><td>"
                     + item.game_count
                     + "</td><td>"
