@@ -128,6 +128,7 @@ const cacheIP1hr = new Cacheman("IP1hr");
 
 // Cache information about matches and best network rating
 const cachematches = new Cacheman("matches");
+const cacheratings = new Cacheman("ratings");
 let bestRatings = new Map();
 
 const fastClientsMap = new Map();
@@ -2216,9 +2217,9 @@ app.get("/data/elograph.json", asyncMiddleware(async(req, res) => {
 }));
 
 app.get("/data/newelograph.json", asyncMiddleware(async(req, res) => {
-    // cache in `cachematches`, so when new match result is uploaded, it gets cleared as well
-    const json = await cachematches.wrap("newelograph", "1d", async() => {
-    console.log("fetching data for newelograph.json, should be called once per day or when `cachematches` is cleared");
+    // cache in `cacheratings`, so when new ratings are uploaded, it gets cleared as well
+    const json = await cacheratings.wrap("newelograph", "1d", async() => {
+    console.log("fetching data for newelograph.json, should be called once per day or when `cacheratings` is cleared");
 
     return db.collection("networks").find().sort({ _id: -1 }).toArray()
     .then(networks => {
@@ -2266,6 +2267,8 @@ app.post('/submit-ratings', asyncMiddleware(async(req, res) => {
     }
     if (!(json instanceof Array))
         return res.status(400).send("Parameters ratings is not a JSON array.\n");
+
+    cacheratings.clear(() => console.log("Cleared ratings cache."));
 
     json.forEach(item => {
         if ((typeof item.hash == "string") && (typeof item.rating == "number")) {
