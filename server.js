@@ -1688,12 +1688,12 @@ app.get("/", asyncMiddleware(async(req, res) => {
         });
 
         page += "<br>";
-        page += "<h4>Recent Strength Graph (<a href=\"/static/elo.html\">Full view</a>.)</h4>";
+        page += "<h4>Recent Strength Graph (<a href=\"/static/newelo.html\">Full view</a>.)</h4>";
         page += "<br>";
         page += "Currently the graph is manually updated soon after a new network starts self-plays.<br>";
         page += "The plot shows a proper Bayes-Elo rating, computed on the set of all played matches.<br>";
         page += "<h4>The x-axis scale is 1/5 for Leela Zero networks (grey crosses).</h4><br>";
-        page += "<iframe width=\"1100\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/elo.html?0#recent=2500000\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
+        page += "<iframe width=\"1100\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/newelo.html?0#recent=2500000\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
         page += "<br><br>Times are in GMT+0100 (CET)<br>\n";
         page += network_table;
         page += match_table;
@@ -2231,7 +2231,24 @@ app.get("/data/newelograph.json", asyncMiddleware(async(req, res) => {
                 json.push({
                     rating: item.rating,
                     net: leelaz ? item.training_steps / 5 : Math.max(0.0, Number(item.training_count + item.rating / 100000)),
-                    sprt: leelaz ? "TEST" : item.rating == 0 ? "???" : item.game_count > 0 ? "PASS" : "FAIL",
+                    sprt: (
+                        leelaz ?
+                            "Leela Zero"
+                        : item.rating == 0 ?
+                            "Random"
+                        : (item.blocks == 6 && item.filters == 128) ?
+                            ( item.game_count > 0 ? "PASS" : "FAIL")
+                        : item.blocks + "x" + item.filters
+                    ),
+                    pos: (
+                        leelaz ?
+                            4
+                        : item.rating == 0 ?
+                            1
+                        : (item.blocks == 6 && item.filters == 128) ?
+                            ( item.game_count > 0 ? 3 : 2)
+                        : item.blocks
+                    ),
                     hash: item.description || item.hash.slice(0, 6),
                     best: item.game_count > 0
                 })
