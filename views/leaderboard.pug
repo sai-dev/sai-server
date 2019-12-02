@@ -1,0 +1,26 @@
+doctype html
+
+html(lang="en")
+    head
+        script(src="/static/tablesort/tablesort.js")
+        script(src="/static/tablesort/tablesort.number.js")
+        link(href="/static/tablesort/tablesort.css" rel="stylesheet")
+    body
+        h1 Leaderboard
+        table(id="sort" border="1")
+            thead
+                tr
+                    th Computer
+                    th Selfplay games
+                    th Match games
+                    th(data-sort-default) Total games
+            tbody
+                each item, key in data
+                    tr
+                        td #{key}
+                        td #{item.games}
+                        td #{item.match_games}
+                        td #{item.total_games}
+
+        script.
+            new Tablesort(document.getElementById('sort'), { descending: true });

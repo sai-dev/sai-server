@@ -129,6 +129,7 @@ const cacheIP1hr = new Cacheman("IP1hr");
 // Cache information about matches and best network rating
 const cachematches = new Cacheman("matches");
 const cacheratings = new Cacheman("ratings");
+const cacheleaders = new Cacheman("leaders");
 let bestRatings = new Map();
 
 const fastClientsMap = new Map();
@@ -1655,6 +1656,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "</ol>"
         page += "<li>If you are a Linux or macOS user, follow this link: <a href=\"https://github.com/sai-dev/sai#macos-and-linux\">https://github.com/sai-dev/sai#macos-and-linux</a>"
         page += "</ol>"
+        page += "<p>This is the <a href=\"leaderboard\">leaderboard</a> of the contributors.</p>"
 
         page += "<p>Notice that after downloading SAI, <strong>you will be able to play with the superhuman SAI 9x9!</strong> <em>This is a superhuman "
         page +=" bot and can play with arbitrary komi – with 6 additional komi points a strong player may beat it.</em> You will also be able to "
@@ -2081,6 +2083,33 @@ app.get("/viewmatch/:hash(\\w+)", (req, res) => {
         res.send("No match was found with hash " + req.params.hash);
     });
 });
+
+app.get("/leaderboard", asyncMiddleware(async(req, res) => {
+    const data = await cacheleaders.wrap("leaderboard", "10m", async() => {
+        console.log("aggregating data for leaderboard, should be called once per 10 minutes");
+        const games = await db.collection("games")
+            .aggregate([ { $group: { _id: "$username", count: { $sum: 1 } } } ])
+            .hint({ username: 1 })
+            .toArray();
+        const match_games = await db.collection("match_games")
+            .aggregate([ { $group: { _id: "$username", count: { $sum: 1 } } } ])
+            .hint({ username: 1 })
+            .toArray();
+        var dict = { };
+        games.forEach( item => {
+            dict[item._id] = { games: item.count, match_games: 0, total_games: item.count };
+        });
+        match_games.forEach( item => {
+            if (! (item._id in dict)) {
+                dict[item._id] = { games: 0 };
+            }
+            dict[item._id]["match_games"] = item.count;
+            dict[item._id]["total_games"] = dict[item._id]["games"] + item.count;
+        });
+        return dict;
+    });
+    res.render("leaderboard", { data: data });
+}));
 
 app.get("/data/elograph.json", asyncMiddleware(async(req, res) => {
     // cache in `cachematches`, so when new match result is uploaded, it gets cleared as well
