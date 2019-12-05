@@ -2265,18 +2265,18 @@ app.get("/data/newelograph.json", asyncMiddleware(async(req, res) => {
                             "Leela Zero"
                         : item.rating == 0 ?
                             "Random"
-                        : (item.blocks == 6 && item.filters == 128) ?
-                            ( item.game_count > 0 ? "PASS" : "FAIL")
+                        : item.game_count > 0 ?
+                            "PASS " + item.blocks + "x" + item.filters
                         : item.blocks + "x" + item.filters
                     ),
                     pos: (
                         leelaz ?
-                            4
+                            99
                         : item.rating == 0 ?
                             1
-                        : (item.blocks == 6 && item.filters == 128) ?
-                            ( item.game_count > 0 ? 3 : 2)
-                        : item.blocks
+                        : item.game_count > 0 ?
+                            10 + item.blocks
+                        : 50 + item.blocks
                     ),
                     hash: item.description || item.hash.slice(0, 6),
                     best: item.game_count > 0
