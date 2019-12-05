@@ -7,9 +7,10 @@ html(lang="en")
         link(href="/static/tablesort/tablesort.css" rel="stylesheet")
     body
         h1 Leaderboard
+        
         table(id="sort" border="1")
             thead
-                tr
+                    th(data-sort-method='none') Position
                     th Computer
                     th Selfplay games
                     th Match games
@@ -17,10 +18,19 @@ html(lang="en")
             tbody
                 each item, key in data
                     tr
+                        td #{pos}
                         td #{key}
                         td #{item.games}
                         td #{item.match_games}
                         td #{item.total_games}
 
-        script.
-            new Tablesort(document.getElementById('sort'), { descending: true });
+        script.     
+            const table = document.getElementById('sort');
+            table.addEventListener('afterSort', function() {
+                const body = table.tBodies[0];
+                for(var i=0; i < body.rows.length; i++) {
+                    const cell = body.rows[i].cells[0];
+                    cell.innerHTML=i+1;
+                }
+            });
+            new Tablesort(table, { descending: true });
