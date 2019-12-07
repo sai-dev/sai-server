@@ -10,11 +10,21 @@ html(lang="en")
         
         table(id="sort" border="1")
             thead
+                tr
+                    th
+                    th
+                    th(colspan=3) All
+                    th(colspan=3) Last Week
+                tr
                     th(data-sort-method='none') Position
                     th Computer
                     th Selfplay games
                     th Match games
                     th(data-sort-default) Total games
+                    th Selfplay games
+                    th Match games
+                    th Total games
+
             tbody
                 each item, key in data
                     tr
@@ -23,6 +33,9 @@ html(lang="en")
                         td #{item.games}
                         td #{item.match_games}
                         td #{item.total_games}
+                        td #{item.games_recent}
+                        td #{item.match_games_recent}
+                        td #{item.total_games_recent}
 
         script.     
             const table = document.getElementById('sort');

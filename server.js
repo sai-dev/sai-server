@@ -2084,30 +2084,21 @@ app.get("/viewmatch/:hash(\\w+)", (req, res) => {
 });
 
 app.get("/leaderboard", asyncMiddleware(async(req, res) => {
-    const data = await cacheleaders.wrap("leaderboard", "10m", async() => {
-        console.log("aggregating data for leaderboard, should be called once per 10 minutes");
-        const games = await db.collection("games")
-            .aggregate([ { $group: { _id: "$username", count: { $sum: 1 } } } ])
-            .hint({ username: 1 })
-            .toArray();
-        const match_games = await db.collection("match_games")
-            .aggregate([ { $group: { _id: "$username", count: { $sum: 1 } } } ])
-            .hint({ username: 1 })
-            .toArray();
-        var dict = { };
-        games.forEach( item => {
-            dict[item._id] = { games: item.count, match_games: 0, total_games: item.count };
-        });
-        match_games.forEach( item => {
-            if (! (item._id in dict)) {
-                dict[item._id] = { games: 0 };
-            }
-            dict[item._id]["match_games"] = item.count;
-            dict[item._id]["total_games"] = dict[item._id]["games"] + item.count;
-        });
-        return dict;
-    });
-    res.render("leaderboard", { data: data });
+    const counts = await Promise.all([
+        cacheleaders.wrap("leaderboardall", "10m", () =>  dbutils.leaderboard(db)),
+        cacheleaders.wrap("leaderboardweek", "10m", () => dbutils.leaderboard(db, 1000 * 60 * 60 * 24 * 7))
+    ]);
+    const dict = counts[0];
+    for (var key in counts[1]) {
+        const a = dict[key]
+        if (typeof a != "undefined") {
+            const l = counts[1][key];
+            a.games_recent = l.games
+            a.match_games_recent = l.match_games
+            a.total_games_recent = l.total_games
+        }
+    }
+    res.render("leaderboard", { data: dict });
 }));
 
 app.get("/data/elograph.json", asyncMiddleware(async(req, res) => {

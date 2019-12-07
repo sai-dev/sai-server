@@ -121,11 +121,36 @@ async function count_ips(db, timeago) {
     return (res.length == 0) ? 0 : res[0].ips;
 }
 
+async function leaderboard(db, timeago = null) {
+    const pipeline = timeago === null
+        ? [ { $group: { _id: "$username", count: { $sum: 1 } } } ]
+        : [ { $match: { _id: { $gt: objectIdFromDate(Date.now() - timeago) } } }, 
+            { $group: { _id: "$username", count: { $sum: 1 } } } ];
+    const index = timeago === null
+        ? { username: 1 }
+        : { _id: 1, username: 1 };
+    const games = await Promise.all([
+        db.collection("games").aggregate(pipeline).hint(index).toArray(),
+        db.collection("match_games").aggregate(pipeline).hint(index).toArray()
+    ]);
+    var dict = { };
+    games[0].forEach( item => {
+        dict[item._id] = { games: item.count, match_games: 0, total_games: item.count };
+    });
+    games[1].forEach( item => {
+        if (! (item._id in dict)) dict[item._id] = { games: 0 };
+        dict[item._id]["match_games"] = item.count;
+        dict[item._id]["total_games"] = dict[item._id]["games"] + item.count;
+    });
+    return dict;
+};
+
 module.exports = {
     get_matches_from_db,
     get_matches_from_cache,
     update_matches_stats_cache,
     clear_matches_cache,
     get_access_logs,
-    count_ips
+    count_ips,
+    leaderboard
 };
