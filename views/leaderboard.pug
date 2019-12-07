@@ -41,7 +41,7 @@ html(lang="en")
             const table = document.getElementById('sort');
             table.addEventListener('afterSort', function() {
                 const body = table.tBodies[0];
-                for(var i=0; i < body.rows.length; i++) {
+                for(let i=0; i < body.rows.length; i++) {
                     const cell = body.rows[i].cells[0];
                     cell.innerHTML=i+1;
                 }

@@ -133,7 +133,7 @@ async function leaderboard(db, timeago = null) {
         db.collection("games").aggregate(pipeline).hint(index).toArray(),
         db.collection("match_games").aggregate(pipeline).hint(index).toArray()
     ]);
-    var dict = new Map();
+    let dict = new Map();
     games[0].forEach( item => {
         dict[item._id] = { username: item._id, games: item.count, match_games: 0, total_games: item.count };
     });

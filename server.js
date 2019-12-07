@@ -1425,8 +1425,8 @@ app.get("/", asyncMiddleware(async(req, res) => {
     let network_table = "<table class=\"networks-table\" border=1><tr><th colspan=7>Best Network Hash</th></tr>\n";
     network_table += "<tr><th>#</th><th>Upload Date</th><th>Hash</th><th>Size</th><th>Elo</th><th>Games</th><th>Training #</th></tr>\n";
 
-    var leaderboard_all_table = "<table class=\"leaderboard-all-table\" border=1><tr><th colspan=\"5\">Leaderboard</th></tr><tr><th>#</th><th>Computer</th><th>Selfplays</th><th>Matches</th><th>Total</th></tr>\n";
-    var leaderboard_recent_table = "<table class=\"leaderboard-recent-table\" border=1><tr><th colspan=\"5\">Last week leaderboard</th></tr><tr><th>#</th><th>Computer</th><th>Selfplays</th><th>Matches</th><th>Total</th></tr>\n";
+    let leaderboard_all_table = "<table class=\"leaderboard-all-table\" border=1><tr><th colspan=\"5\">Leaderboard</th></tr><tr><th>#</th><th>Computer</th><th>Selfplays</th><th>Matches</th><th>Total</th></tr>\n";
+    let leaderboard_recent_table = "<table class=\"leaderboard-recent-table\" border=1><tr><th colspan=\"5\">Last week leaderboard</th></tr><tr><th>#</th><th>Computer</th><th>Selfplays</th><th>Matches</th><th>Total</th></tr>\n";
 
     let styles = "";
 
@@ -1523,7 +1523,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         cacheleaders.wrap("leaderboardall", "10m", () => dbutils.leaderboard(db))
         .then(list => {
             const res = Object.values(list).sort( (x,y) => y.total_games - x.total_games ).slice(0,16);
-            var pos = 1;
+            let pos = 1;
             for (item of res) {
                 leaderboard_all_table += "<tr><td>" + pos +"</td><td>" + item.username + "</td><td>" + item.games + "</td><td>" + item.match_games + "</td><td>" + item.total_games + "</td></tr>\n";
                 pos += 1;
@@ -1534,7 +1534,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         cacheleaders.wrap("leaderboardweek", "10m", () => dbutils.leaderboard(db, 1000 * 60 * 60 * 24 * 7))
         .then(list => {
             const res = Object.values(list).sort( (x,y) => y.total_games - x.total_games ).slice(0,16);
-            var pos = 1;
+            let pos = 1;
             for (item of res) {
                 leaderboard_recent_table += "<tr><td>" + pos +"</td><td>" + item.username + "</td><td>" + item.games + "</td><td>" + item.match_games + "</td><td>" + item.total_games + "</td></tr>\n";
                 pos += 1;
@@ -1945,7 +1945,7 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         return res.status(400).send(msg+"\n");
     };
 
-    var best_network_hash = await get_best_network_hash()
+    let best_network_hash = await get_best_network_hash()
 
     if (!req.body.key || req.body.key != auth_key) {
         console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(auth_key) + "'");
@@ -2116,7 +2116,7 @@ app.get("/leaderboard", asyncMiddleware(async(req, res) => {
         cacheleaders.wrap("leaderboardweek", "10m", () => dbutils.leaderboard(db, 1000 * 60 * 60 * 24 * 7))
     ]);
     const dict = counts[0];
-    for (var key in counts[1]) {
+    for (let key in counts[1]) {
         const a = dict[key]
         if (typeof a != "undefined") {
             const l = counts[1][key];
@@ -2322,7 +2322,7 @@ app.post('/submit-ratings', asyncMiddleware(async(req, res) => {
     if (!req.body.ratings)
         return res.status(400).send("Parameter ratings is missing.\n");
 
-    var json;
+    let json;
     try {
         json = JSON.parse(req.body.ratings);
     } catch(err) {
