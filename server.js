@@ -1442,12 +1442,11 @@ app.get("/", asyncMiddleware(async(req, res) => {
     const totalgames = await cursor.next();
 
     const best_network_hash = await get_best_network_hash();
-
     Promise.all([
-        cacheIP24hr.wrap("IP24hr", "5m", () => Promise.resolve(db.collection("games").distinct("ip", { _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60 * 24) } })))
-        .then(list => (list.length + " clients in past 24 hours, ")),
-        cacheIP1hr.wrap("IP1hr", "30s", () => Promise.resolve(db.collection("games").distinct("ip", { _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60) } })))
-        .then(list => (list.length + " in past hour.<br>")),
+        cacheIP24hr.wrap("IP24hr", "5m", () =>  dbutils.count_ips(db,1000 * 60 * 60 * 24))
+        .then(count_ips => (count_ips + " clients in past 24 hours, ")),
+        cacheIP1hr.wrap("IP1hr", "30s", () => dbutils.count_ips(db,1000 * 60 * 60))
+        .then(count_ips => (count_ips + " in past hour.<br>")),
         db.collection("games").find({ _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60 * 24) } }).count()
         .then(count => `${counter} total <a href="/self-plays">self-play games</a> (${count} in past 24 hours, `),
         db.collection("games").find({ _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60) } }).count()
