@@ -1425,6 +1425,9 @@ app.get("/", asyncMiddleware(async(req, res) => {
     let network_table = "<table class=\"networks-table\" border=1><tr><th colspan=7>Best Network Hash</th></tr>\n";
     network_table += "<tr><th>#</th><th>Upload Date</th><th>Hash</th><th>Size</th><th>Elo</th><th>Games</th><th>Training #</th></tr>\n";
 
+    var leaderboard_all_table = "<table class=\"leaderboard-all-table\" border=1><tr><th colspan=\"5\">Leaderboard</th></tr><tr><th>#</th><th>Computer</th><th>Selfplays</th><th>Matches</th><th>Total</th></tr>\n";
+    var leaderboard_recent_table = "<table class=\"leaderboard-recent-table\" border=1><tr><th colspan=\"5\">Last week leaderboard</th></tr><tr><th>#</th><th>Computer</th><th>Selfplays</th><th>Matches</th><th>Total</th></tr>\n";
+
     let styles = "";
 
     // Display some self-play for all and by current ip
@@ -1517,6 +1520,28 @@ app.get("/", asyncMiddleware(async(req, res) => {
         }),
         db.collection("games").find({}, selfplayProjection).sort({ _id: -1 }).limit(10).toArray()
         .then(saveSelfplay("all")),
+        cacheleaders.wrap("leaderboardall", "10m", () => dbutils.leaderboard(db))
+        .then(list => {
+            const res = Object.values(list).sort( (x,y) => y.total_games - x.total_games ).slice(0,16);
+            var pos = 1;
+            for (item of res) {
+                leaderboard_all_table += "<tr><td>" + pos +"</td><td>" + item.username + "</td><td>" + item.games + "</td><td>" + item.match_games + "</td><td>" + item.total_games + "</td></tr>\n";
+                pos += 1;
+            }
+            leaderboard_all_table += "</table>";
+            return "";
+        }),
+        cacheleaders.wrap("leaderboardweek", "10m", () => dbutils.leaderboard(db, 1000 * 60 * 60 * 24 * 7))
+        .then(list => {
+            const res = Object.values(list).sort( (x,y) => y.total_games - x.total_games ).slice(0,16);
+            var pos = 1;
+            for (item of res) {
+                leaderboard_recent_table += "<tr><td>" + pos +"</td><td>" + item.username + "</td><td>" + item.games + "</td><td>" + item.match_games + "</td><td>" + item.total_games + "</td></tr>\n";
+                pos += 1;
+            }
+            leaderboard_recent_table += "</table>";
+            return "";
+        }),
         cachematches.wrap("matches", "1d", () => Promise.resolve(
         db.collection("matches").aggregate([ { $lookup: { localField: "network2", from: "networks", foreignField: "hash", as: "merged" } }, { $unwind: "$merged" }, { $lookup: { localField: "network1", from: "networks", foreignField: "hash", as: "merged1" } }, { $unwind: "$merged1" }, { $sort: { _id: -1 } }, { $limit: 100 } ])
         .toArray()
@@ -1626,6 +1651,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "<script type=\"text/javascript\" src=\"/static/timeago.js\"></script>\n";
         page += "<style>";
         page += "table.networks-table { float: left; margin-right: 40px; margin-bottom: 20px; }\n";
+        page += "table.leaderboard-all-table { float: left; margin-right: 40px; margin-bottom: 20px; }\n";
         page += styles;
 
         // From https://www.w3schools.com/css/css_tooltip.asp
@@ -1655,7 +1681,6 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "</ol>"
         page += "<li>If you are a Linux or macOS user, follow this link: <a href=\"https://github.com/sai-dev/sai#macos-and-linux\">https://github.com/sai-dev/sai#macos-and-linux</a>"
         page += "</ol>"
-        page += "<p>This is the <a href=\"leaderboard\">leaderboard</a> of the contributors.</p>"
 
         page += "<p>Notice that after downloading SAI, <strong>you will be able to play with the superhuman SAI 9x9!</strong> <em>This is a superhuman "
         page +=" bot and can play with arbitrary komi – with 6 additional komi points a strong player may beat it.</em> You will also be able to "
@@ -1688,9 +1713,11 @@ app.get("/", asyncMiddleware(async(req, res) => {
             }
         });
 
-        page += "<br>";
+        page += "<p>View the <a href=\"leaderboard\">full leaderboard</a> of the contributors.</p>"
+        page += leaderboard_all_table;
+        page += leaderboard_recent_table;
+
         page += "<h4>Recent Strength Graph (<a href=\"/static/newelo.html\">Full view</a>.)</h4>";
-        page += "<br>";
         page += "Currently the graph is manually updated soon after a new network starts self-plays.<br>";
         page += "The plot shows a proper Bayes-Elo rating, computed on the set of all played matches.<br>";
         page += "<h4>The x-axis scale is 1/5 for Leela Zero networks (grey crosses).</h4><br>";
