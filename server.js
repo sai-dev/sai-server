@@ -1572,7 +1572,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
                     + "<a href=\"/networks/" + item.network1 + ".gz\">" + item.network1.slice(0, 8) + "</a>"
                     + "<span class=\"tooltiptextleft\">"
                     + item.merged1.training_count.abbr(4)
-                    + (item.merged1.training_steps ? "+" + item.merged1.training_steps.abbr(3) : "")
+                    + (item.merged1.training_steps ? "+" + item.merged1.training_steps.abbr(4) : "")
                     + (item.merged1.filters && item.merged1.blocks ? `<br/>${item.merged1.blocks}x${item.merged1.filters}` : "")
                     + (item.merged1.description ? `<br/>${item.merged1.description}` : "")
                     + "</span></div>&nbsp;"
@@ -1589,7 +1589,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
                         + "<a href=\"/networks/" + item.network2 + ".gz\">" + item.network2.slice(0, 8) + "</a>"
                         + "<span class=\"tooltiptextright\">"
                         + item.merged.training_count.abbr(4)
-                        + (item.merged.training_steps ? "+" + item.merged.training_steps.abbr(3) : "")
+                        + (item.merged.training_steps ? "+" + item.merged.training_steps.abbr(4) : "")
                         + (item.merged.filters && item.merged.blocks ? `<br/>${item.merged.blocks}x${item.merged.filters}` : "")
                         + (item.merged.description ? `<br/>${item.merged.description}` : "")
                         + "</span></div>";
