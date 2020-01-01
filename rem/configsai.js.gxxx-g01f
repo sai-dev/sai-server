@@ -1,0 +1,15 @@
+const config = require("./config");
+
+config.base_url = "http://sai.unich.it/";
+
+config.mail_from = "sai-dev@googlegroups.com";
+
+config.default_dumbpass = true;
+
+config.mail_transport = {
+    host: "phobos.unich.it",
+    port: 587,
+    secure: false // upgrade later with STARTTLS
+};
+
+module.exports = config;

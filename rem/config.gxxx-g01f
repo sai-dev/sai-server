@@ -1,0 +1,14 @@
+default_visits = 800
+default_randomcnt = 50
+default_komi = 7
+default_noise_value = 0.02
+default_lambda = 0
+default_resignation_percent = 5
+default_no_resignation_probability = 0.01
+base_port = 8080
+instance_number = 40
+schedule_matches_to_all = true
+no_early_fail = true
+branching_coefficient = 0.015
+branching_maxbranches = 4
+default_other_options_selfplay = "--nrsymm --restrict_tt --adv_features --chainlibs_feat --chainsize_feat --blunderthr 0.05 --randomtemp 1.0 --policy_temp 1.2 --recordvisits"

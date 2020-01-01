@@ -48,7 +48,7 @@ const no_early_fail = configsai.no_early_fail ?  Boolean(configsai.no_early_fail
 const branching_coefficient = configsai.branching_coefficient ? Number(configsai.branching_coefficient) : 0.1;
 const branching_maxbranches = configsai.branching_maxbranches ? Number(configsai.branching_maxbranches) : 3;
 
-const MONGODB_URL = configsai.mongodb_url ? configsai.mongodb_url : "mongodb://localhost/sai"+instance_number;
+const MONGODB_URL = "mongodb://localhost/sai"+instance_number;
 
 if (config.RAVEN_DSN) {
     console.log("init raven");
@@ -128,8 +128,6 @@ const cacheIP1hr = new Cacheman("IP1hr");
 
 // Cache information about matches and best network rating
 const cachematches = new Cacheman("matches");
-const cacheratings = new Cacheman("ratings");
-const cacheleaders = new Cacheman("leaders");
 let bestRatings = new Map();
 
 const fastClientsMap = new Map();
@@ -839,7 +837,10 @@ app.post("/submit-network", asyncMiddleware((req, res) => {
         if (!set.training_count) {
             const cursor = db.collection("networks").aggregate([{ $group: { _id: 1, count: { $sum: "$game_count" } } }]);
             const totalgames = await cursor.next();
-            set.training_count = (totalgames ? totalgames.count : 0);
+            if (totalgames)
+                set.training_count = totalgames.count;
+            else
+                set.training_count = 0;
         }
 
         // Prepare variables for printing messages
@@ -1425,9 +1426,6 @@ app.get("/", asyncMiddleware(async(req, res) => {
     let network_table = "<table class=\"networks-table\" border=1><tr><th colspan=7>Best Network Hash</th></tr>\n";
     network_table += "<tr><th>#</th><th>Upload Date</th><th>Hash</th><th>Size</th><th>Elo</th><th>Games</th><th>Training #</th></tr>\n";
 
-    let leaderboard_all_table = "<table class=\"leaderboard-all-table\" border=1><tr><th colspan=\"5\">Leaderboard</th></tr><tr><th>#</th><th>Computer</th><th>Selfplays</th><th>Matches</th><th>Total</th></tr>\n";
-    let leaderboard_recent_table = "<table class=\"leaderboard-recent-table\" border=1><tr><th colspan=\"5\">Last week leaderboard</th></tr><tr><th>#</th><th>Computer</th><th>Selfplays</th><th>Matches</th><th>Total</th></tr>\n";
-
     let styles = "";
 
     // Display some self-play for all and by current ip
@@ -1445,11 +1443,12 @@ app.get("/", asyncMiddleware(async(req, res) => {
     const totalgames = await cursor.next();
 
     const best_network_hash = await get_best_network_hash();
+
     Promise.all([
-        cacheIP24hr.wrap("IP24hr", "5m", () =>  dbutils.count_ips(db,1000 * 60 * 60 * 24))
-        .then(count_ips => (count_ips + " clients in past 24 hours, ")),
-        cacheIP1hr.wrap("IP1hr", "30s", () => dbutils.count_ips(db,1000 * 60 * 60))
-        .then(count_ips => (count_ips + " in past hour.<br>")),
+        cacheIP24hr.wrap("IP24hr", "5m", () => Promise.resolve(db.collection("games").distinct("ip", { _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60 * 24) } })))
+        .then(list => (list.length + " clients in past 24 hours, ")),
+        cacheIP1hr.wrap("IP1hr", "30s", () => Promise.resolve(db.collection("games").distinct("ip", { _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60) } })))
+        .then(list => (list.length + " in past hour.<br>")),
         db.collection("games").find({ _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60 * 24) } }).count()
         .then(count => `${counter} total <a href="/self-plays">self-play games</a> (${count} in past 24 hours, `),
         db.collection("games").find({ _id: { $gt: objectIdFromDate(Date.now() - 1000 * 60 * 60) } }).count()
@@ -1464,9 +1463,9 @@ app.get("/", asyncMiddleware(async(req, res) => {
             // Exclude ELF network
             { $match: { $and: [{ game_count: { $gt: 0 } }, { hash: { $not: { $in: ELF_NETWORKS } } }] } },
             { $sort: { _id: 1 } },
-            { $group: { _id: 1, networks: { $push: { _id: "$_id", hash: "$hash", game_count: "$game_count", training_count: "$training_count", filters: "$filters", blocks: "$blocks", rating: "$rating" } } } },
+            { $group: { _id: 1, networks: { $push: { _id: "$_id", hash: "$hash", game_count: "$game_count", training_count: "$training_count", filters: "$filters", blocks: "$blocks" } } } },
             { $unwind: { path: "$networks", includeArrayIndex: "networkID" } },
-            { $project: { _id: "$networks._id", hash: "$networks.hash", game_count: "$networks.game_count", training_count: "$networks.training_count", filters: "$networks.filters", blocks: "$networks.blocks", rating: "$networks.rating", networkID: 1 } },
+            { $project: { _id: "$networks._id", hash: "$networks.hash", game_count: "$networks.game_count", training_count: "$networks.training_count", filters: "$networks.filters", blocks: "$networks.blocks", networkID: 1 } },
             { $sort: { networkID: -1 } },
             { $limit: 10000 }
         ])
@@ -1489,8 +1488,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
                     + "</a></td><td>"
                     + (item.filters && item.blocks ? `${item.blocks}x${item.filters}` : "TBD")
                     + "</td><td>"
-                    + Math.floor(item.rating)
-//                    + ~~bestRatings.get(item.hash)
+                    + ~~bestRatings.get(item.hash)
                     + "</td><td>"
                     + item.game_count
                     + "</td><td>"
@@ -1520,28 +1518,6 @@ app.get("/", asyncMiddleware(async(req, res) => {
         }),
         db.collection("games").find({}, selfplayProjection).sort({ _id: -1 }).limit(10).toArray()
         .then(saveSelfplay("all")),
-        cacheleaders.wrap("leaderboardall", "10m", () => dbutils.leaderboard(db))
-        .then(list => {
-            const res = Object.values(list).sort( (x,y) => y.total_games - x.total_games ).slice(0,16);
-            let pos = 1;
-            for (item of res) {
-                leaderboard_all_table += "<tr><td>" + pos +"</td><td>" + item.username + "</td><td>" + item.games + "</td><td>" + item.match_games + "</td><td>" + item.total_games + "</td></tr>\n";
-                pos += 1;
-            }
-            leaderboard_all_table += "</table>";
-            return "";
-        }),
-        cacheleaders.wrap("leaderboardweek", "10m", () => dbutils.leaderboard(db, 1000 * 60 * 60 * 24 * 7))
-        .then(list => {
-            const res = Object.values(list).sort( (x,y) => y.total_games - x.total_games ).slice(0,16);
-            let pos = 1;
-            for (item of res) {
-                leaderboard_recent_table += "<tr><td>" + pos +"</td><td>" + item.username + "</td><td>" + item.games + "</td><td>" + item.match_games + "</td><td>" + item.total_games + "</td></tr>\n";
-                pos += 1;
-            }
-            leaderboard_recent_table += "</table>";
-            return "";
-        }),
         cachematches.wrap("matches", "1d", () => Promise.resolve(
         db.collection("matches").aggregate([ { $lookup: { localField: "network2", from: "networks", foreignField: "hash", as: "merged" } }, { $unwind: "$merged" }, { $lookup: { localField: "network1", from: "networks", foreignField: "hash", as: "merged1" } }, { $unwind: "$merged1" }, { $sort: { _id: -1 } }, { $limit: 100 } ])
         .toArray()
@@ -1572,7 +1548,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
                     + "<a href=\"/networks/" + item.network1 + ".gz\">" + item.network1.slice(0, 8) + "</a>"
                     + "<span class=\"tooltiptextleft\">"
                     + item.merged1.training_count.abbr(4)
-                    + (item.merged1.training_steps ? "+" + item.merged1.training_steps.abbr(4) : "")
+                    + (item.merged1.training_steps ? "+" + item.merged1.training_steps.abbr(3) : "")
                     + (item.merged1.filters && item.merged1.blocks ? `<br/>${item.merged1.blocks}x${item.merged1.filters}` : "")
                     + (item.merged1.description ? `<br/>${item.merged1.description}` : "")
                     + "</span></div>&nbsp;"
@@ -1589,7 +1565,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
                         + "<a href=\"/networks/" + item.network2 + ".gz\">" + item.network2.slice(0, 8) + "</a>"
                         + "<span class=\"tooltiptextright\">"
                         + item.merged.training_count.abbr(4)
-                        + (item.merged.training_steps ? "+" + item.merged.training_steps.abbr(4) : "")
+                        + (item.merged.training_steps ? "+" + item.merged.training_steps.abbr(3) : "")
                         + (item.merged.filters && item.merged.blocks ? `<br/>${item.merged.blocks}x${item.merged.filters}` : "")
                         + (item.merged.description ? `<br/>${item.merged.description}` : "")
                         + "</span></div>";
@@ -1601,8 +1577,8 @@ app.get("/", asyncMiddleware(async(req, res) => {
                     + "<td>" + item.network1_wins + " : " + (item.game_count - item.network1_losses - item.network1_wins) + " : " + item.network1_losses
                         + (win_percent ? win_percent + "</td>" : "</td>")
                     + "<td>" + item.game_count + " / " + item.number_to_play + "</td>";
-                    // + "<td>";
                 match_table += "<td>" + ( item.type ? item.type : "" ) + "</td>";
+                    // + "<td>";
 
                 // // Treat non-test match that has been promoted as PASS
                 // const promotedMatch = bestRatings.has(item.network1) && !item.is_test;
@@ -1633,7 +1609,7 @@ app.get("/", asyncMiddleware(async(req, res) => {
                 //     }
                 // }
 
-                // match_table += "</td></tr>\n";
+//                match_table += "</td></tr>\n";
                 match_table += "</tr>\n";
             }
 
@@ -1651,7 +1627,6 @@ app.get("/", asyncMiddleware(async(req, res) => {
         page += "<script type=\"text/javascript\" src=\"/static/timeago.js\"></script>\n";
         page += "<style>";
         page += "table.networks-table { float: left; margin-right: 40px; margin-bottom: 20px; }\n";
-        page += "table.leaderboard-all-table { float: left; margin-right: 40px; margin-bottom: 20px; }\n";
         page += styles;
 
         // From https://www.w3schools.com/css/css_tooltip.asp
@@ -1713,14 +1688,13 @@ app.get("/", asyncMiddleware(async(req, res) => {
             }
         });
 
-        page += "<p>View the <a href=\"leaderboard\">full leaderboard</a> of the contributors.</p>"
-        page += leaderboard_all_table;
-        page += leaderboard_recent_table;
-
-        page += "<h4>Recent Strength Graph (<a href=\"/static/newelo.html\">Full view</a>.)</h4>";
+        page += "<br>";
+        page += "<h4>Recent Strength Graph (<a href=\"/static/elo.html\">Full view</a>.) [Reload with shift-F5 or clean cache to update the graph! We have still some problems with the page.]</h4>";
+        page += "<br>";
+        page += "Currently the graph is manually updated soon after a new network starts self-plays.<br>";
         page += "The plot shows a proper Bayes-Elo rating, computed on the set of all played matches.<br>";
         page += "<h4>The x-axis scale is 1/5 for Leela Zero networks (grey crosses).</h4><br>";
-        page += "<iframe width=\"1100\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/newelo.html?0#recent=650000\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
+        page += "<iframe width=\"1100\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/elo.html?0#recent=2500000\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
         page += "<br><br>Times are in GMT+0100 (CET)<br>\n";
         page += network_table;
         page += match_table;
@@ -1764,37 +1738,32 @@ function shouldScheduleMatch(req, now) {
     return false;
   }
 
-  // Find the first match this client can play, starting from a random match
-  // and looping until something to do is found or all maches are scheduled
-  let i = pending_matches.length;
-  const rot = Math.floor(Math.random() * pending_matches.length);
+  // Find the first match this client can play
+  let match;
+  let i = Math.ceil(Math.random() * pending_matches.length);
   while (--i >= 0) {
-    let j = ( i + rot ) % pending_matches.length;
-    let match = pending_matches[j];
-
-    const deleted = match.requests.filter(e => e.timestamp < now - MATCH_EXPIRE_TIME).length;
-    const oldest = (match.requests.length > 0 ? (now - match.requests[0].timestamp) / 1000 / 60 : 0).toFixed(2);
-    match.requests.splice(0, deleted);
-    const requested = match.requests.length;
-    const needed = how_many_games_to_queue(
-      match.number_to_play,
-      match.network1_wins,
-      match.network1_losses,
-      PESSIMISTIC_RATE,
-      bestRatings.has(match.network1),
-      no_early_fail);
-
-    const result = needed > requested;
-    console.log(`Need ${needed} match games. Requested ${requested}, deleted ${deleted}. Oldest ${oldest}m ago. Will ${result ? "" : "not"} schedule match.`);
-
-    if (result) {
-      return match;
-    }
+    match = pending_matches[i];
+    break;
   }
 
   // Don't schedule if we ran out of potential matches for this client
-  console.log(`No need of match games. Will schedule self-play.`);
-  return false;
+  if (i < 0) return false;
+
+  const deleted = match.requests.filter(e => e.timestamp < now - MATCH_EXPIRE_TIME).length;
+  const oldest = (match.requests.length > 0 ? (now - match.requests[0].timestamp) / 1000 / 60 : 0).toFixed(2);
+  match.requests.splice(0, deleted);
+  const requested = match.requests.length;
+  const needed = how_many_games_to_queue(
+                match.number_to_play,
+                match.network1_wins,
+                match.network1_losses,
+                PESSIMISTIC_RATE,
+                bestRatings.has(match.network1),
+                no_early_fail);
+  const result = needed > requested;
+  console.log(`Need ${needed} match games. Requested ${requested}, deleted ${deleted}. Oldest ${oldest}m ago. Will schedule ${result ? "match" : "selfplay"}.`);
+
+  return result && match;
 }
 
 /**
@@ -1856,10 +1825,7 @@ async function get_task(req, res) {
 
         match.requests.push({ timestamp: now, seed: random_seed });
 
-        if (match.game_count >= match.number_to_play) {
-            const pending_match_index = pending_matches.findIndex(m => m._id.equals(match._id));
-            pending_matches.splice(pending_match_index, 1);
-        }
+        if (match.game_count >= match.number_to_play) pending_matches.pop();
 
         console.log(`${req.ip} (${req.headers["x-real-ip"]}) got task: match ${match.network1.slice(0, 8)} vs ${match.network2.slice(0, 8)} ${match.game_count + match.requests.length} of ${match.number_to_play} ${JSON.stringify(task)}`);
 //    } else if ( req.params.autogtp==1 && Math.random() > .2 ) {
@@ -1877,7 +1843,7 @@ async function get_task(req, res) {
             { cmd: "selfplay", hash: "", required_client_version, minimum_autogtp_version: required_client_version, random_seed, minimum_leelaz_version: required_leelaz_version };
 
         //var options = {"playouts": "1600", "resignation_percent": "10", "noise": "true", "randomcnt": "30"};
-        const options = { playouts: "0", visits: String(default_visits), resignation_percent: String(default_resignation_percent), noise: "true", randomcnt: String(default_randomcnt),
+        const options = { playouts: "0", visits: String(default_visits+1), resignation_percent: String(default_resignation_percent), noise: "true", randomcnt: String(default_randomcnt),
                           komi: String(default_komi), noise_value: String(default_noise_value), lambda: String(default_lambda), other_options: String(default_other_options_selfplay),
                           dumbpass: String(config.default_dumbpass) };
 
@@ -1944,7 +1910,7 @@ app.post('/request-selfplay',  asyncMiddleware( async (req, res, next) => {
         return res.status(400).send(msg+"\n");
     };
 
-    let best_network_hash = await get_best_network_hash()
+    var best_network_hash = await get_best_network_hash()
 
     if (!req.body.key || req.body.key != auth_key) {
         console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(auth_key) + "'");
@@ -2109,24 +2075,6 @@ app.get("/viewmatch/:hash(\\w+)", (req, res) => {
     });
 });
 
-app.get("/leaderboard", asyncMiddleware(async(req, res) => {
-    const counts = await Promise.all([
-        cacheleaders.wrap("leaderboardall", "10m", () =>  dbutils.leaderboard(db)),
-        cacheleaders.wrap("leaderboardweek", "10m", () => dbutils.leaderboard(db, 1000 * 60 * 60 * 24 * 7))
-    ]);
-    const dict = counts[0];
-    for (let key in counts[1]) {
-        const a = dict[key]
-        if (typeof a != "undefined") {
-            const l = counts[1][key];
-            a.games_recent = l.games
-            a.match_games_recent = l.match_games
-            a.total_games_recent = l.total_games
-        }
-    }
-    res.render("leaderboard", { data: dict });
-}));
-
 app.get("/data/elograph.json", asyncMiddleware(async(req, res) => {
     // cache in `cachematches`, so when new match result is uploaded, it gets cleared as well
     const json = await cachematches.wrap("elograph", "1d", async() => {
@@ -2259,92 +2207,6 @@ app.get("/data/elograph.json", asyncMiddleware(async(req, res) => {
     });
 
     res.json(json);
-}));
-
-app.get("/data/newelograph.json", asyncMiddleware(async(req, res) => {
-    // cache in `cacheratings`, so when new ratings are uploaded, it gets cleared as well
-    const json = await cacheratings.wrap("newelograph", "1d", async() => {
-    console.log("fetching data for newelograph.json, should be called once per day or when `cacheratings` is cleared");
-
-    return db.collection("networks").find().sort({ _id: -1 }).toArray()
-    .then(networks => {
-        // prepare json result
-        const json = [];
-        networks.forEach(item => {
-            if (typeof item.rating != "undefined") {
-                const leelaz = item.description ?  item.description.startsWith("LZ") : false;
-                json.push({
-                    rating: item.rating,
-                    net: leelaz ? item.training_steps / 5 : Math.max(0.0, Number(item.training_count + item.rating / 100000)),
-                    sprt: (
-                        leelaz ?
-                            "Leela Zero"
-                        : item.rating == 0 ?
-                            "Random"
-                        : item.game_count > 0 ?
-                            "PASS " + item.blocks + "x" + item.filters
-                        : item.blocks + "x" + item.filters
-                    ),
-                    pos: (
-                        leelaz ?
-                            99
-                        : item.rating == 0 ?
-                            1
-                        : item.game_count > 0 ?
-                            10 + item.blocks
-                        : 50 + item.blocks
-                    ),
-                    hash: item.description || item.hash.slice(0, 6),
-                    best: item.game_count > 0
-                })
-            }
-        });
-
-        // shortcut for sending json result using `JSON.stringify`
-        // and set `Content-Type: application/json`
-        return json;
-    }).catch(err => {
-        console.log("ERROR data/newelograph.json: " + err);
-        res.send("ERROR data/newelograph.json: " + err);
-    });
-    });
-
-    res.json(json);
-}));
-
-app.post('/submit-ratings', asyncMiddleware(async(req, res) => {
-    if (!req.body.key || req.body.key != auth_key) {
-        console.log("AUTH FAIL: '" + String(req.body.key) + "' VS '" + String(auth_key) + "'");
-
-        return res.status(400).send("Incorrect key provided.\n");
-    }
-    if (!req.body.ratings)
-        return res.status(400).send("Parameter ratings is missing.\n");
-
-    let json;
-    try {
-        json = JSON.parse(req.body.ratings);
-    } catch(err) {
-        return res.status(400).send("Parameters rating is not a valid JSON.\n");
-    }
-    if (!(json instanceof Array))
-        return res.status(400).send("Parameters ratings is not a JSON array.\n");
-
-    cacheratings.clear(() => console.log("Cleared ratings cache."));
-
-    json.forEach(item => {
-        if ((typeof item.hash == "string") && (typeof item.rating == "number")) {
-            const hash_arr = item.hash.split(':');
-            const hash = hash_arr.length == 2 ? hash_arr[1] : item.hash;
-            db.collection("networks").updateOne(
-                { hash: { $regex: "^"+hash } },
-                { $set: { rating: item.rating }},
-                { upsert: false }
-            );
-        }
-    });
-
-    res.send("Ratings updated.\n");
 }));
 
 /*
