@@ -290,7 +290,7 @@ function SPRT(w, l) {
     return SPRTold(w, l);
 }
 
-const QUEUE_BUFFER = 8;
+const QUEUE_BUFFER = 20;
 
 function how_many_games_to_queue(max_games, w_obs, l_obs, pessimistic_rate, isBest, no_early_fail) {
     const games_left = max_games - w_obs - l_obs;
