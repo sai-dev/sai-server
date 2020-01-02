@@ -50,6 +50,9 @@ const branching_maxbranches = configsai.branching_maxbranches ? Number(configsai
 
 const MONGODB_URL = configsai.mongodb_url ? configsai.mongodb_url : "mongodb://localhost/sai"+instance_number;
 
+const LZGRAPHSCALE = 4
+const GRAPHRECENT = 900000
+
 if (config.RAVEN_DSN) {
     console.log("init raven");
     Raven.config(config.RAVEN_DSN, { captureUnhandledRejections: true }).install();
@@ -1719,8 +1722,8 @@ app.get("/", asyncMiddleware(async(req, res) => {
 
         page += "<h4>Recent Strength Graph (<a href=\"/static/newelo.html\">Full view</a>.)</h4>";
         page += "The plot shows a proper Bayes-Elo rating, computed on the set of all played matches.<br>";
-        page += "<h4>The x-axis scale is 1/5 for Leela Zero networks (grey crosses).</h4><br>";
-        page += "<iframe width=\"1100\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/newelo.html?0#recent=650000\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
+        page += "<h4>The x-axis scale is 1/" + LZGRAPHSCALE + " for Leela Zero networks (grey crosses).</h4><br>";
+        page += "<iframe width=\"1100\" height=\"655\" seamless frameborder=\"0\" scrolling=\"no\" src=\"/static/newelo.html?0#recent=" + GRAPHRECENT + "\"></iframe><script>(i => i.contentWindow.location = i.src)(document.querySelector(\"iframe\"))</script>";
         page += "<br><br>Times are in GMT+0100 (CET)<br>\n";
         page += network_table;
         page += match_table;
@@ -2275,7 +2278,7 @@ app.get("/data/newelograph.json", asyncMiddleware(async(req, res) => {
                 const leelaz = item.description ?  item.description.startsWith("LZ") : false;
                 json.push({
                     rating: item.rating,
-                    net: leelaz ? item.training_steps / 5 : Math.max(0.0, Number(item.training_count + item.rating / 100000)),
+                    net: leelaz ? item.training_steps / LZGRAPHSCALE : Math.max(0.0, Number(item.training_count + item.rating / 100000)),
                     sprt: (
                         leelaz ?
                             "Leela Zero"
