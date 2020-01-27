@@ -50,8 +50,8 @@ const branching_maxbranches = configsai.branching_maxbranches ? Number(configsai
 
 const MONGODB_URL = configsai.mongodb_url ? configsai.mongodb_url : "mongodb://localhost/sai"+instance_number;
 
-const LZGRAPHSCALE = 4
-const GRAPHRECENT = 900000
+const LZGRAPHSCALE = 3
+const GRAPHRECENT = 1400000
 
 if (config.RAVEN_DSN) {
     console.log("init raven");
