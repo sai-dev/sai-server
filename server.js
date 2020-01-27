@@ -831,7 +831,7 @@ app.post("/submit-network", asyncMiddleware((req, res) => {
             training_steps: +req.body.training_steps || null,
             filters: +req.body.filters || req.files.weights.filters,
             blocks: +req.body.blocks || req.files.weights.blocks,
-            training_run: +req.body.training_run || null,
+            training_run: req.body.training_run || null,
             generation: +req.body.generation || null,
             parent_hash: req.body.parent_hash,
             description: req.body.description
