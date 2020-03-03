@@ -39,8 +39,8 @@
       recent = Number(recent[1]);
 
       // Find the highest number of games of valid networks
-      var networks = values.filter(v => v.net && v.rating);
-      var maxGames = Math.max(...networks.map(v => v.net));
+      var networks = values.filter(v => v.net && v.rating && v.sprt!="Leela Zero");
+      var maxGames = Math.max(...networks.map(v => v.net)) + recent/3;
 
       // Find networks that are in the recent window
       var threshold = maxGames - recent;
