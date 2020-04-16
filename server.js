@@ -2038,13 +2038,34 @@ app.get("/view/:hash(\\w+)", (req, res) => {
 });
 
 app.get("/self-plays", (req, res) => {
-    db.collection("games").find({}, { data: 0 }).sort({ _id: -1 }).limit(1200).toArray()
+  db.collection("games").find({}, {data: 0, sgf:0 }).sort({ _id: -1 }).limit(1200).toArray()
     .then(list => {
-        process_games_list(list, req.ip);
-        // render pug view self-plays
-        res.render("self-plays", { data: list });
+      process_games_list(list, req.ip);
+      // render pug view self-plays
+      res.render("self-plays", { data: list });
     }).catch(() => {
-        res.send("Failed to get recent self-play games");
+      res.send("Failed to get recent self-play games");
+    });
+});
+
+app.get("/self-plays/:selfplayid(\\w+)", (req, res) => {
+  if (!req.params.selfplayid) {
+    res.send("selfplayid missing");
+    return;
+  }
+  
+  db.collection("self_plays").findOne({_id: new ObjectId(req.params.selfplayid)}, {_id: 0, networkhash: 1})
+    .then(({networkhash}) => {
+      db.collection("games").find({ networkhash: networkhash, selfplay_id: req.params.selfplayid }, { data: 0, sgf:0 }).limit(1200).toArray()
+	.then(list => {
+          process_games_list(list, req.ip);
+          res.render("self-plays", { data: list });
+	}).catch(() => {
+          res.send("Failed to get recent self-play games");
+	});
+    })
+    .catch(() => {
+      res.send("No selfplays found with hash " + req.params.selfplayid);
     });
 });
 
