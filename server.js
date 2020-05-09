@@ -1747,10 +1747,16 @@ function shouldScheduleSelfplay (req, now) {
   while (--i >= 0) {
     const selfplay = pending_selfplays[i];
     const deleted = selfplay.requests.filter(e => e.timestamp < now - SELFPLAY_EXPIRE_TIME).length;
+    const oldest = (selfplay.requests.length > 0 ? (now - selfplay.requests[0].timestamp) / 1000 / 60 : 0).toFixed(2);
     selfplay.requests.splice(0, deleted);
     const requested = selfplay.requests.length;
-    if (selfplay.number_to_play > selfplay.game_count + requested)
+    const needed = selfplay.number_to_play - selfplay.game_count;
+    const result = needed > requested;
+    console.log(`Need ${needed} selfplay games for id ${selfplay._id}. Requested ${requested}, deleted ${deleted}. Oldest ${oldest}m ago. Will ${result ? "" : "not"} schedule selfplay.`);
+
+    if (result) {
         return selfplay;
+    }
   }
   return false;
 }
@@ -1901,6 +1907,11 @@ async function get_task(req, res) {
             }
             self_play.requests.push({ timestamp: now, seed: random_seed });
             if (Math.random() < self_play.no_resignation_probability) options.resignation_percent = "0";
+            if (self_play.game_count >= self_play.number_to_play) {
+                console.log(`Deleting selfplay ${self_play._id} from pending queue`);
+                const pending_selfplay_index = pending_selfplays.findIndex(m => m._id.equals(self_play._id));
+                pending_selfplays.splice(pending_selfplay_index, 1);
+            }
         } else if (! disable_default_selfplay || req.params.autogtp == 0) {
             task.hash = best_network_hash;
             if (Math.random() < default_no_resignation_probability) options.resignation_percent = "0";
@@ -2053,7 +2064,7 @@ app.get("/self-plays/:selfplayid(\\w+)", (req, res) => {
     res.send("selfplayid missing");
     return;
   }
-  
+
   db.collection("self_plays").findOne({_id: new ObjectId(req.params.selfplayid)}, {_id: 0, networkhash: 1})
     .then(({networkhash}) => {
       db.collection("games").find({ networkhash: networkhash, selfplay_id: req.params.selfplayid }, { data: 0, sgf:0 }).limit(1200).toArray()
